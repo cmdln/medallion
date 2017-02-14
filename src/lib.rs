@@ -211,7 +211,7 @@ mod tests {
     pub fn verify_data_rsa() {
         let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5/aewHCCJpT5jP1fpexUCF/9m3NxlC7uYNXAl6NKno520oh9wVT4VV/vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo+WuSRQ0mmKj+/y3weAmx/9EaTLY639uD8+o5iZxIIf85U4e55Wdp+C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I+LqBWpWyXnJ1zk6+w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
+        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
         let data = format!("{}.{}", header, claims);
 
         let key = load_key("./examples/publicKey.pub").unwrap();
