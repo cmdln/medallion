@@ -71,6 +71,14 @@ mod tests {
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct EmptyClaim { }
 
+    #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
+    struct NonEmptyClaim {
+        user_id: String,
+        is_admin: bool,
+        first_name: Option<String>,
+        last_name: Option<String>
+    }
+
     #[test]
     fn from_base64() {
         let enc = "eyJpc3MiOiJleGFtcGxlLmNvbSIsImV4cCI6MTMwMjMxOTEwMH0";
@@ -96,5 +104,17 @@ mod tests {
         claims.reg.exp = Some(1302319100);
         let enc = claims.to_base64().unwrap();
         assert_eq!(claims, Claims::from_base64(&*enc).unwrap());
+    }
+
+    #[test]
+    fn roundtrip_custom() {
+        let mut claims: Claims<NonEmptyClaim> = Default::default();
+        claims.reg.iss = Some("example.com".into());
+        claims.reg.exp = Some(1302319100);
+        claims.private.user_id = "123456".into();
+        claims.private.is_admin = false;
+        claims.private.first_name = Some("Random".into());
+        let enc = claims.to_base64().unwrap();
+        assert_eq!(claims, Claims::<NonEmptyClaim>::from_base64(&*enc).unwrap());
     }
 }
