@@ -1,14 +1,15 @@
-extern crate crypto;
-extern crate jwt;
-extern crate rustc_serialize;
+// need this for custom derivation
+#[macro_use]
+extern crate serde_derive;
+extern crate medallion;
 
 use std::default::Default;
-use jwt::{
+use medallion::{
     DefaultHeader,
     Token,
 };
 
-#[derive(Default, RustcDecodable, RustcEncodable)]
+#[derive(Default, Serialize, Deserialize)]
 struct Custom {
     sub: String,
     rhino: bool,

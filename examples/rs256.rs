@@ -1,10 +1,9 @@
-extern crate crypto;
-extern crate jwt;
+extern crate medallion;
 
 use std::default::Default;
 use std::fs::File;
 use std::io::{Error, Read};
-use jwt::{
+use medallion::{
     Algorithm,
     DefaultHeader,
     Registered,
@@ -29,7 +28,7 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
         ..Default::default()
     };
     let claims = Registered {
-        iss: Some("mikkyang.com".into()),
+        iss: Some("example.com".into()),
         sub: Some(user_id.into()),
         ..Default::default()
     };
@@ -49,9 +48,9 @@ fn login(token: &str) -> Option<String> {
 }
 
 fn main() {
-    let token = new_token("Michael Yang", "password").unwrap();
+    let token = new_token("Random User", "password").unwrap();
 
     let logged_in_user = login(&*token).unwrap();
 
-    assert_eq!(logged_in_user, "Michael Yang");
+    assert_eq!(logged_in_user, "Random User");
 }
