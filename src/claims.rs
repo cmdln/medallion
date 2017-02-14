@@ -73,26 +73,26 @@ mod tests {
 
     #[test]
     fn from_base64() {
-        let enc = "ew0KICAiaXNzIjogIm1pa2t5YW5nLmNvbSIsDQogICJleHAiOiAxMzAyMzE5MTAwLA0KICAibmFtZSI6ICJNaWNoYWVsIFlhbmciLA0KICAiYWRtaW4iOiB0cnVlDQp9";
+        let enc = "eyJpc3MiOiJleGFtcGxlLmNvbSIsImV4cCI6MTMwMjMxOTEwMH0";
         let claims: Claims<EmptyClaim> = Claims::from_base64(enc).unwrap();
 
-        assert_eq!(claims.reg.iss.unwrap(), "mikkyang.com");
+        assert_eq!(claims.reg.iss.unwrap(), "example.com");
         assert_eq!(claims.reg.exp.unwrap(), 1302319100);
     }
 
     #[test]
     fn multiple_types() {
-        let enc = "ew0KICAiaXNzIjogIm1pa2t5YW5nLmNvbSIsDQogICJleHAiOiAxMzAyMzE5MTAwLA0KICAibmFtZSI6ICJNaWNoYWVsIFlhbmciLA0KICAiYWRtaW4iOiB0cnVlDQp9";
+        let enc = "eyJpc3MiOiJleGFtcGxlLmNvbSIsImV4cCI6MTMwMjMxOTEwMH0";
         let claims  = Registered::from_base64(enc).unwrap();
 
-        assert_eq!(claims.iss.unwrap(), "mikkyang.com");
+        assert_eq!(claims.iss.unwrap(), "example.com");
         assert_eq!(claims.exp.unwrap(), 1302319100);
     }
 
     #[test]
     fn roundtrip() {
         let mut claims: Claims<EmptyClaim> = Default::default();
-        claims.reg.iss = Some("mikkyang.com".into());
+        claims.reg.iss = Some("example.com".into());
         claims.reg.exp = Some(1302319100);
         let enc = claims.to_base64().unwrap();
         assert_eq!(claims, Claims::from_base64(&*enc).unwrap());

@@ -43,9 +43,9 @@ fn login(token: &str) -> Option<String> {
 }
 
 fn main() {
-    let token = new_token("Michael Yang", "password").unwrap();
+    let token = new_token("Random User", "password").unwrap();
 
     let logged_in_user = login(&*token).unwrap();
 
-    assert_eq!(logged_in_user, "Michael Yang");
+    assert_eq!(logged_in_user, "Random User");
 }
