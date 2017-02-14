@@ -3,12 +3,12 @@ use Component;
 use error::Error;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use serde_json::value::{from_value, to_value, Map, Value};
+use serde_json::value::{Value};
 
 #[derive(Debug, Default, PartialEq)]
-pub struct Claims {
+pub struct Claims<T: Serialize + Deserialize> {
     pub reg: Registered,
-    pub private: Value
+    pub private: T
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -22,11 +22,8 @@ pub struct Registered {
     pub jti: Option<String>,
 }
 
-/// JWT Claims. Registered claims are directly accessible via the `Registered`
-/// struct embedded, while private fields are a map that contains `Json`
-/// values.
-impl Claims {
-    pub fn new(reg: Registered, private: Value) -> Claims {
+impl<T: Serialize + Deserialize> Claims<T>{
+    pub fn new(reg: Registered, private: T) -> Claims<T> {
         Claims {
             reg: reg,
             private: private
@@ -34,31 +31,34 @@ impl Claims {
     }
 }
 
-impl Component for Claims {
-    fn from_base64(raw: &str) -> Result<Claims, Error> {
+impl<T: Serialize + Deserialize> Component for Claims<T> {
+    fn from_base64(raw: &str) -> Result<Claims<T>, Error> {
         let data = try!(decode(raw));
         let reg_claims: Registered = try!(serde_json::from_slice(&data));
 
-        let pri_claims: Value = try!(serde_json::from_slice(&data));
+        let pri_claims: T = try!(serde_json::from_slice(&data));
 
 
-        Ok(Claims{
+        Ok(Claims {
             reg: reg_claims,
             private: pri_claims
         })
     }
 
     fn to_base64(&self) -> Result<String, Error> {
-        let mut value = try!(serde_json::to_value(&self.reg));
-        let mut obj_value = &value.as_object_mut().unwrap();
-        // TODO iterate private claims and add to JSON Map
-        //let mut pri_value = self.private.as_object_mut().unwrap();
+        if let Value::Object(mut reg_map) = serde_json::to_value(&self.reg)? {
+            if let Value::Object(pri_map) = serde_json::to_value(&self.private)? {
+                reg_map.extend(pri_map);
+                let s = try!(serde_json::to_string(&reg_map));
+                let enc = encode_config((&*s).as_bytes(), URL_SAFE);
+                Ok(enc)
+            } else {
+                Err(Error::Custom("Could not access registered claims.".to_owned()))
+            }
+        } else {
+            Err(Error::Custom("Could not access private claims.".to_owned()))
+        }
 
-        //obj_value.extend(pri_value.into_iter());
-
-        let s = try!(serde_json::to_string(&obj_value));
-        let enc = encode_config((&*s).as_bytes(), URL_SAFE);
-        Ok(enc)
     }
 }
 
@@ -68,10 +68,13 @@ mod tests {
     use claims::{Claims, Registered};
     use Component;
 
+    #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
+    struct EmptyClaim { }
+
     #[test]
     fn from_base64() {
         let enc = "ew0KICAiaXNzIjogIm1pa2t5YW5nLmNvbSIsDQogICJleHAiOiAxMzAyMzE5MTAwLA0KICAibmFtZSI6ICJNaWNoYWVsIFlhbmciLA0KICAiYWRtaW4iOiB0cnVlDQp9";
-        let claims = Claims::from_base64(enc).unwrap();
+        let claims: Claims<EmptyClaim> = Claims::from_base64(enc).unwrap();
 
         assert_eq!(claims.reg.iss.unwrap(), "mikkyang.com");
         assert_eq!(claims.reg.exp.unwrap(), 1302319100);
@@ -80,7 +83,7 @@ mod tests {
     #[test]
     fn multiple_types() {
         let enc = "ew0KICAiaXNzIjogIm1pa2t5YW5nLmNvbSIsDQogICJleHAiOiAxMzAyMzE5MTAwLA0KICAibmFtZSI6ICJNaWNoYWVsIFlhbmciLA0KICAiYWRtaW4iOiB0cnVlDQp9";
-        let claims = Registered::from_base64(enc).unwrap();
+        let claims  = Registered::from_base64(enc).unwrap();
 
         assert_eq!(claims.iss.unwrap(), "mikkyang.com");
         assert_eq!(claims.exp.unwrap(), 1302319100);
@@ -88,7 +91,7 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        let mut claims: Claims = Default::default();
+        let mut claims: Claims<EmptyClaim> = Default::default();
         claims.reg.iss = Some("mikkyang.com".into());
         claims.reg.exp = Some(1302319100);
         let enc = claims.to_base64().unwrap();

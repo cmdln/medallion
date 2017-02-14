@@ -8,6 +8,7 @@ pub enum Error {
     Utf8(FromUtf8Error),
     Base64(Base64Error),
     JSON(serde_json::Error),
+    Custom(String),
 }
 
 macro_rules! error_wrap {

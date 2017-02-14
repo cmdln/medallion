@@ -168,11 +168,14 @@ mod tests {
     use std::fs::File;
     use openssl::hash::MessageDigest;
 
+    #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
+    struct EmptyClaim { }
+
     #[test]
     pub fn sign_data() {
         let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
+        let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ=";
         let data = format!("{}.{}", header, claims);
 
         let sig = sign(&*data, "secret".as_bytes(), MessageDigest::sha256());
@@ -184,7 +187,7 @@ mod tests {
     pub fn sign_data_rsa() {
         let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5/aewHCCJpT5jP1fpexUCF/9m3NxlC7uYNXAl6NKno520oh9wVT4VV/vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo+WuSRQ0mmKj+/y3weAmx/9EaTLY639uD8+o5iZxIIf85U4e55Wdp+C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I+LqBWpWyXnJ1zk6+w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
+        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA==";
         let data = format!("{}.{}", header, claims);
 
         let key = load_key("./examples/privateKey.pem").unwrap();
@@ -218,7 +221,7 @@ mod tests {
     #[test]
     pub fn raw_data() {
         let raw = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
-        let token = Token::<DefaultHeader, Claims>::parse(raw).unwrap();
+        let token = Token::<DefaultHeader, Claims<EmptyClaim>>::parse(raw).unwrap();
 
         {
             assert_eq!(token.header.alg, HS256);
@@ -228,7 +231,7 @@ mod tests {
 
     #[test]
     pub fn roundtrip() {
-        let token: Token<DefaultHeader, Claims> = Default::default();
+        let token: Token<DefaultHeader, Claims<EmptyClaim>> = Default::default();
         let key = "secret".as_bytes();
         let raw = token.signed(key).unwrap();
         let same = Token::parse(&*raw).unwrap();
@@ -239,7 +242,7 @@ mod tests {
 
     #[test]
     pub fn roundtrip_rsa() {
-        let token: Token<DefaultHeader, Claims> = Token {
+        let token: Token<DefaultHeader, Claims<EmptyClaim>> = Token {
             header: DefaultHeader {
                 alg: RS512,
                 ..Default::default()
