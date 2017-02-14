@@ -1,4 +1,4 @@
-use base64::{decode, encode_config, URL_SAFE};
+use base64::{decode_config, encode_config, URL_SAFE};
 use openssl::hash::MessageDigest;
 use openssl::memcmp;
 use openssl::pkey::PKey;
@@ -26,7 +26,7 @@ pub fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> String {
 }
 
 pub fn verify(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
-    let target_bytes: Vec<u8> = decode(target).unwrap();
+    let target_bytes: Vec<u8> = decode_config(target, URL_SAFE).unwrap();
     let secret_key = PKey::hmac(key).unwrap();
 
     let mut signer = Signer::new(digest, &secret_key).unwrap();
@@ -38,7 +38,7 @@ pub fn verify(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bo
 }
 
 pub fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
-    let signature_bytes: Vec<u8> = decode(signature).unwrap();
+    let signature_bytes: Vec<u8> = decode_config(signature, URL_SAFE).unwrap();
     let public_key = Rsa::public_key_from_pem(key).unwrap();
     let pkey = PKey::from_rsa(public_key).unwrap();
     let mut verifier = Verifier::new(digest, &pkey).unwrap();

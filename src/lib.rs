@@ -5,7 +5,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use base64::{decode, encode_config, URL_SAFE};
+use base64::{decode_config, encode_config, URL_SAFE};
 use openssl::hash::MessageDigest;
 use serde::{Serialize, Deserialize};
 pub use error::Error;
@@ -41,7 +41,7 @@ impl<T> Component for T
 
     /// Parse from a string.
     fn from_base64(raw: &str) -> Result<T, Error> {
-        let data = try!(decode(raw));
+        let data = try!(decode_config(raw, URL_SAFE));
         let s = try!(String::from_utf8(data));
         Ok(try!(serde_json::from_str(&*s)))
     }

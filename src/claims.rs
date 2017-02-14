@@ -1,4 +1,4 @@
-use base64::{decode, encode_config, URL_SAFE};
+use base64::{decode_config, encode_config, URL_SAFE};
 use Component;
 use error::Error;
 use serde::{Deserialize, Serialize};
@@ -33,7 +33,7 @@ impl<T: Serialize + Deserialize> Claims<T>{
 
 impl<T: Serialize + Deserialize> Component for Claims<T> {
     fn from_base64(raw: &str) -> Result<Claims<T>, Error> {
-        let data = try!(decode(raw));
+        let data = try!(decode_config(raw, URL_SAFE));
         let reg_claims: Registered = try!(serde_json::from_slice(&data));
 
         let pri_claims: T = try!(serde_json::from_slice(&data));
