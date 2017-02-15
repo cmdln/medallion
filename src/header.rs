@@ -1,6 +1,7 @@
 use std::default::Default;
 use Header;
 
+/// A default Header providing the type, key id and algorithm fields.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultHeader {
     pub typ: Option<HeaderType>,
@@ -9,11 +10,13 @@ pub struct DefaultHeader {
 }
 
 
+/// Default value for the header type field.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum HeaderType {
     JWT,
 }
 
+/// Supported algorithms, each representing a valid signature and digest combination.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Algorithm {
     HS256,
@@ -34,6 +37,8 @@ impl Default for DefaultHeader {
     }
 }
 
+/// Allow the rest of the library to access the configured algorithm without having to know the
+/// specific type for the header.
 impl Header for DefaultHeader {
     fn alg(&self) -> &Algorithm {
         &(self.alg)

@@ -5,12 +5,15 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::value::{Value};
 
+/// A default claim set, including the standard, or registered, claims and the ability to specify
+/// your own as private claims.
 #[derive(Debug, Default, PartialEq)]
 pub struct Claims<T: Serialize + Deserialize> {
     pub reg: Registered,
     pub private: T
 }
 
+/// The registered claims from the spec.
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Registered {
     pub iss: Option<String>,
@@ -23,6 +26,7 @@ pub struct Registered {
 }
 
 impl<T: Serialize + Deserialize> Claims<T>{
+    /// Convenience factory method
     pub fn new(reg: Registered, private: T) -> Claims<T> {
         Claims {
             reg: reg,
@@ -32,6 +36,8 @@ impl<T: Serialize + Deserialize> Claims<T>{
 }
 
 impl<T: Serialize + Deserialize> Component for Claims<T> {
+    /// This implementation  simply parses the base64 data twice, each time applying it to the
+    /// registered and private claims.
     fn from_base64(raw: &str) -> Result<Claims<T>, Error> {
         let data = try!(decode_config(raw, URL_SAFE));
         let reg_claims: Registered = try!(serde_json::from_slice(&data));
@@ -45,6 +51,8 @@ impl<T: Serialize + Deserialize> Component for Claims<T> {
         })
     }
 
+    /// Renders both the registered and private claims into a single consolidated JSON
+    /// representation before encoding.
     fn to_base64(&self) -> Result<String, Error> {
         if let Value::Object(mut reg_map) = serde_json::to_value(&self.reg)? {
             if let Value::Object(pri_map) = serde_json::to_value(&self.private)? {

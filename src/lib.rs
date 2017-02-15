@@ -18,6 +18,7 @@ pub mod header;
 pub mod claims;
 mod crypt;
 
+/// Main struct representing a JSON Web Token, composed of a header and a set of claims.
 #[derive(Debug, Default)]
 pub struct Token<H, C>
     where H: Component, C: Component {
@@ -26,15 +27,19 @@ pub struct Token<H, C>
     pub claims: C,
 }
 
+/// Any header type must implement this trait so that signing and verification work.
 pub trait Header {
     fn alg(&self) -> &header::Algorithm;
 }
 
+/// Any header or claims type must implement this trait in order to serialize and deserialize
+/// correctly.
 pub trait Component: Sized {
     fn from_base64(raw: &str) -> Result<Self, Error>;
     fn to_base64(&self) -> Result<String, Error>;
 }
 
+/// Provide a default implementation that should work in almost all cases.
 impl<T> Component for T
     where T: Serialize + Deserialize + Sized {
 
@@ -53,6 +58,7 @@ impl<T> Component for T
     }
 }
 
+/// Provide the ability to parse a token, verify it and sign/serialize it.
 impl<H, C> Token<H, C>
     where H: Component + Header, C: Component {
     pub fn new(header: H, claims: C) -> Token<H, C> {
@@ -74,7 +80,7 @@ impl<H, C> Token<H, C>
         })
     }
 
-    /// Verify a from_base64 token with a key and the token's specific algorithm
+    /// Verify a token with a key and the token's specific algorithm.
     pub fn verify(&self, key: &[u8]) -> bool {
         let raw = match self.raw {
             Some(ref s) => s,
@@ -88,7 +94,8 @@ impl<H, C> Token<H, C>
         crypt::verify(sig, data, key, &self.header.alg())
     }
 
-    /// Generate the signed token from a key and the specific algorithm
+    /// Generate the signed token from a key with the specific algorithm as a url-safe, base64
+    /// string.
     pub fn signed(&self, key: &[u8]) -> Result<String, Error> {
         let header = try!(Component::to_base64(&self.header));
         let claims = try!(self.claims.to_base64());
