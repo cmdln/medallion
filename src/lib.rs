@@ -115,31 +115,11 @@ impl<H, C> Token<H, C>
 
     /// Generate the signed token from a key and the specific algorithm
     pub fn signed(&self, key: &[u8]) -> Result<String, Error> {
-        match self.header.alg() {
-            &Algorithm::HS256 => self.signed_hmac(key, MessageDigest::sha256()),
-            &Algorithm::HS384 => self.signed_hmac(key, MessageDigest::sha384()),
-            &Algorithm::HS512 => self.signed_hmac(key, MessageDigest::sha512()),
-            &Algorithm::RS256 => self.signed_rsa(key, MessageDigest::sha256()),
-            &Algorithm::RS384 => self.signed_rsa(key, MessageDigest::sha384()),
-            &Algorithm::RS512 => self.signed_rsa(key, MessageDigest::sha512()),
-        }
-    }
-
-    fn signed_hmac(&self, key: &[u8], digest: MessageDigest) -> Result<String, Error> {
         let header = try!(Component::to_base64(&self.header));
         let claims = try!(self.claims.to_base64());
         let data = format!("{}.{}", header, claims);
 
-        let sig = crypt::sign_hmac(&*data, key, digest);
-        Ok(format!("{}.{}", data, sig))
-    }
-
-    fn signed_rsa(&self, key: &[u8], digest: MessageDigest) -> Result<String, Error> {
-        let header = try!(Component::to_base64(&self.header));
-        let claims = try!(self.claims.to_base64());
-        let data = format!("{}.{}", header, claims);
-
-        let sig = crypt::sign_rsa(&*data, key, digest);
+        let sig = crypt::sign(&*data, key, &self.header.alg());
         Ok(format!("{}.{}", data, sig))
     }
 }
@@ -176,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    pub fn roundtrip() {
+    pub fn roundtrip_hmac() {
         let token: Token<DefaultHeader, Claims<EmptyClaim>> = Default::default();
         let key = "secret".as_bytes();
         let raw = token.signed(key).unwrap();
