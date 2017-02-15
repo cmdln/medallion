@@ -1,9 +1,9 @@
 [package]
 name = "medallion"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Thomas Gideon <cmdln@thecommandline.net>"]
 description = "JWT library for rust using serde, serde_json and openssl"
-homepage = "http://github.com/commandline/meiallion"
+homepage = "http://github.com/commandline/medallion"
 repository = "http://github.com/commandline/medallion"
 documentation = "https://commandline.github.io/medallion/"
 readme = "README.md"
