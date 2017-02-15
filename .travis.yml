@@ -1,0 +1,13 @@
+language: rust
+after_success: |
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  cargo doc &&
+  echo "<meta http-equiv=refresh content=0;url=`echo $TRAVIS_REPO_SLUG | cut -d '/' -f 2`/index.html>" > target/doc/index.html &&
+  sudo pip install ghp-import &&
+  ghp-import -n target/doc &&
+  git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+env:
+  global:
+  - secure: jJXjOIunGefg1od5sBRi4ADWw2MpfdH3qmYgmtAOXFf2VDZv4j5FI93qfRXrmNptjwvmx433RGteGMXe8ve/rtSKgPe7OE0zRCM64PZCA3sZym+dkQypH6mijQxb4rpnsl8uzbyB96VjOidcUaDVit+B8ZitDdyESL7jcipNvwYJPMvyoiemyXKSujiNd9ldb0KfN6f/SQClirq1kXeVzLTdUdUB4Bd1oIjOPXBwRKJJNUWt4tYvrmGAKwZsxyQJxsukXofIBfLpxbqu4v6uN0kWcCX6Fp8ByTAkBNUJdb9N51Go9svFXv9jlcX+ZivwA2d8epFH0k2jjMqSFfNjC/AqdeJgG3zlqRMwoDe6Y6/OwKpQNnhQ34H/NPmje3qHZi3cmTHk2AW4FRXNUGYVQNuHEyafUff7VgtW5yugPAOCslovZo6S9Z1Iyu8JgWY8EWK4QWb3KuNQfjKplGuP8ZSao4hn8orkEtvLwSlox28CaFFD627CQeGbM/2Dk3gDOl3uiNyscT/ZsfNraP4wXqhLgjofnf8fg7ldLNQhpxdmmy4uWQGSnpmqSQsWBAwjkl7PPOjmh6rGegQt/gHgLbEkcIUxhwcwNfJkr3ibMhfw/xx5jJVGKSw+628Qm9x5r7Se7qeAIih0VKLK2BAhPeavKra/wngKTONw6jJ9GsQ=
+  - secure: ExfWXuwjLlvVQYX7AmVGJ2t2fJo6nAfd93MdWb06RYLL4l8GhDiQ93MVU57FQJcfOrOsEL+lil1wP1ZQWFu099GOoe4P55drGpKY8H4t5+Sd7Q3VofYrScd7l0blidHTmXGvbBgVw69LzPKDra0hrZrfHr7k7NpoG7kdzVz7AydhaYmO7zVVWBEoCAaLwZjNvFVY3jmmwSufKt2dQkGzMoHj9W4UEkkWnWIPuYUNLIAYGEShHbgO/tHjMIMLN4ifbXrBdX01P9zcteKMed+G50NhDJgIzKQ8Qp06+cy4XzWmRWVK7GUuCCmXqAYLKyreRmLozZleP0yMZrLJJ/8wDbl9LKRgV4xQCSLqdiKg4BUnzSkSVRvSLY1iKaWw/N86h8lF34LhWUTP5rdi3Mr2gra4EeDHEqoALPgPRKcabu3ZQzykw9ulBTZEbZGKfbVnW/zSYfVmWy3MymEWwpyw2AYB1UrFusVU0oGFBdPvl5ncSy/WjoF81RAzA8HIcxPDuSUncu0MSvrdxvOViP7nld5GmsqODx5M9D800ILTixmtjVjGciB1AdCdodj2/x3yd5iRd7II9E0+hPvadR8tUO/inETgJJLi8n/E3LdAHJyKPlND9yZY2NguQ8t1yI/IVxlh1L0zFEJ60eWyE3/+4wpN3T+vBC4fskmCHOiH5QM=
