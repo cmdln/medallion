@@ -1,10 +1,10 @@
-# JWT
+# Medallion [![Build Status](https://travis-ci.org/commandline/medallion.svg?branch=master)](https://travis-ci.org/commandline/medallion)
 
 A JWT library for rust using serde, serde_json and openssl.
 
 ## Documentation
 
-* https://commandline.github.io/medallion/
+- [Documentation] (https://commandline.github.io/medallion/)
 
 ## Usage
 
