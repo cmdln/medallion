@@ -1,3 +1,6 @@
+#![crate_name = "medallion"]
+#![crate_type = "lib"]
+#![doc(html_root_url = "https://commandline.github.io/medallion/")]
 extern crate base64;
 extern crate openssl;
 extern crate serde;

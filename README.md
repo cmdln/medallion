@@ -2,6 +2,10 @@
 
 A JWT library for rust using serde, serde_json and openssl.
 
+## Documentation
+
+* https://commandline.github.io/medallion/
+
 ## Usage
 
 The library provides a `Token` type that wraps a header and claims. The claims can be any type that implements the `Component` trait, which is automatically implemented for types that implement the `Sized`, `Encodable`,
