@@ -154,69 +154,15 @@ impl<H, C> PartialEq for Token<H, C>
 
 #[cfg(test)]
 mod tests {
-    use crypt::{
-        sign,
-        sign_rsa,
-        verify,
-        verify_rsa
-    };
     use Claims;
     use Token;
     use header::Algorithm::{HS256,RS512};
     use header::DefaultHeader;
     use std::io::{Error, Read};
     use std::fs::File;
-    use openssl::hash::MessageDigest;
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct EmptyClaim { }
-
-    #[test]
-    pub fn sign_data() {
-        let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-        let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ=";
-        let data = format!("{}.{}", header, claims);
-
-        let sig = sign(&*data, "secret".as_bytes(), MessageDigest::sha256());
-
-        assert_eq!(sig, real_sig);
-    }
-
-    #[test]
-    pub fn sign_data_rsa() {
-        let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
-        let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA==";
-        let data = format!("{}.{}", header, claims);
-
-        let key = load_key("./examples/privateKey.pem").unwrap();
-
-        let sig = sign_rsa(&*data, key.as_bytes(), MessageDigest::sha256());
-
-        assert_eq!(sig.trim(), real_sig);
-    }
-
-    #[test]
-    pub fn verify_data() {
-        let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-        let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let target = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
-        let data = format!("{}.{}", header, claims);
-
-        assert!(verify(target, &*data, "secret".as_bytes(), MessageDigest::sha256()));
-    }
-
-    #[test]
-    pub fn verify_data_rsa() {
-        let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
-        let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
-        let data = format!("{}.{}", header, claims);
-
-        let key = load_key("./examples/publicKey.pub").unwrap();
-        assert!(verify_rsa(&real_sig, &*data, key.as_bytes(), MessageDigest::sha256()));
-    }
 
     #[test]
     pub fn raw_data() {
