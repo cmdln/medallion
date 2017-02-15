@@ -28,7 +28,7 @@ pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> bo
     }
 }
 
-pub fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> String {
+fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> String {
     let secret_key = PKey::hmac(key).unwrap();
 
     let mut signer = Signer::new(digest, &secret_key).unwrap();
@@ -38,7 +38,7 @@ pub fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> String {
     encode_config(&mac, URL_SAFE)
 }
 
-pub fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> String {
+fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> String {
     let private_key = Rsa::private_key_from_pem(key).unwrap();
     let pkey = PKey::from_rsa(private_key).unwrap();
 
@@ -48,7 +48,7 @@ pub fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> String {
     encode_config(&sig, URL_SAFE)
 }
 
-pub fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
+fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
     let target_bytes: Vec<u8> = decode_config(target, URL_SAFE).unwrap();
     let secret_key = PKey::hmac(key).unwrap();
 
@@ -60,7 +60,7 @@ pub fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) 
     memcmp::eq(&mac, &target_bytes)
 }
 
-pub fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
+fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
     let signature_bytes: Vec<u8> = decode_config(signature, URL_SAFE).unwrap();
     let public_key = Rsa::public_key_from_pem(key).unwrap();
     let pkey = PKey::from_rsa(public_key).unwrap();

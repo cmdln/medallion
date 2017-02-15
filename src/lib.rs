@@ -6,7 +6,6 @@ extern crate serde_derive;
 extern crate serde_json;
 
 use base64::{decode_config, encode_config, URL_SAFE};
-use openssl::hash::MessageDigest;
 use serde::{Serialize, Deserialize};
 pub use error::Error;
 pub use header::DefaultHeader;
@@ -77,17 +76,6 @@ impl<H, C> Token<H, C>
 
     /// Verify a from_base64 token with a key and the token's specific algorithm
     pub fn verify(&self, key: &[u8]) -> bool {
-        match self.header.alg() {
-            &Algorithm::HS256 => self.verify_hmac(key, MessageDigest::sha256()),
-            &Algorithm::HS384 => self.verify_hmac(key, MessageDigest::sha384()),
-            &Algorithm::HS512 => self.verify_hmac(key, MessageDigest::sha512()),
-            &Algorithm::RS256 => self.verify_rsa(key, MessageDigest::sha256()),
-            &Algorithm::RS384 => self.verify_rsa(key, MessageDigest::sha384()),
-            &Algorithm::RS512 => self.verify_rsa(key, MessageDigest::sha512()),
-        }
-    }
-
-    fn verify_hmac(&self, key: &[u8], digest: MessageDigest) -> bool {
         let raw = match self.raw {
             Some(ref s) => s,
             None => return false,
@@ -97,20 +85,7 @@ impl<H, C> Token<H, C>
         let sig = pieces[0];
         let data = pieces[1];
 
-        crypt::verify_hmac(sig, data, key, digest)
-    }
-
-    fn verify_rsa(&self, key: &[u8], digest: MessageDigest) -> bool {
-        let raw = match self.raw {
-            Some(ref s) => s,
-            None => return false,
-        };
-
-        let pieces: Vec<_> = raw.rsplitn(2, '.').collect();
-        let sig = pieces[0];
-        let data = pieces[1];
-
-        crypt::verify_rsa(sig, data, key, digest)
+        crypt::verify(sig, data, key, &self.header.alg())
     }
 
     /// Generate the signed token from a key and the specific algorithm
