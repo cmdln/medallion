@@ -72,10 +72,9 @@ pub fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest
 #[cfg(test)]
 mod tests {
     use header::Algorithm;
-    use openssl::hash::MessageDigest;
     use std::io::{Error, Read};
     use std::fs::File;
-    use super::{sign, sign_hmac, sign_rsa, verify, verify_hmac, verify_rsa};
+    use super::{sign, verify};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct EmptyClaim { }
@@ -87,7 +86,6 @@ mod tests {
         let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ=";
         let data = format!("{}.{}", header, claims);
 
-        //let sig = sign_hmac(&*data, "secret".as_bytes(), MessageDigest::sha256());
         let sig = sign(&*data, "secret".as_bytes(), &Algorithm::HS256);
 
         assert_eq!(sig, real_sig);
@@ -102,7 +100,7 @@ mod tests {
 
         let key = load_key("./examples/privateKey.pem").unwrap();
 
-        let sig = sign_rsa(&*data, key.as_bytes(), MessageDigest::sha256());
+        let sig = sign(&*data, key.as_bytes(), &Algorithm::RS256);
 
         assert_eq!(sig.trim(), real_sig);
     }
@@ -114,7 +112,7 @@ mod tests {
         let target = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let data = format!("{}.{}", header, claims);
 
-        assert!(verify_hmac(target, &*data, "secret".as_bytes(), MessageDigest::sha256()));
+        assert!(verify(target, &*data, "secret".as_bytes(), &Algorithm::HS256));
     }
 
     #[test]
@@ -125,7 +123,7 @@ mod tests {
         let data = format!("{}.{}", header, claims);
 
         let key = load_key("./examples/publicKey.pub").unwrap();
-        assert!(verify_rsa(&real_sig, &*data, key.as_bytes(), MessageDigest::sha256()));
+        assert!(verify(&real_sig, &*data, key.as_bytes(), &Algorithm::RS256));
     }
 
     fn load_key(keypath: &str) -> Result<String, Error> {
