@@ -5,7 +5,7 @@ use openssl::pkey::PKey;
 use openssl::rsa::Rsa;
 use openssl::sign::{Signer, Verifier};
 
-pub fn sign(data: &str, key: &[u8], digest: MessageDigest) -> String {
+pub fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> String {
     let secret_key = PKey::hmac(key).unwrap();
 
     let mut signer = Signer::new(digest, &secret_key).unwrap();
@@ -25,7 +25,7 @@ pub fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> String {
     encode_config(&sig, URL_SAFE)
 }
 
-pub fn verify(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
+pub fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
     let target_bytes: Vec<u8> = decode_config(target, URL_SAFE).unwrap();
     let secret_key = PKey::hmac(key).unwrap();
 
@@ -48,12 +48,7 @@ pub fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        sign,
-        sign_rsa,
-        verify,
-        verify_rsa
-    };
+    use super::{sign_hmac, sign_rsa, verify_hmac, verify_rsa};
     use std::io::{Error, Read};
     use std::fs::File;
     use openssl::hash::MessageDigest;
@@ -62,13 +57,13 @@ mod tests {
     struct EmptyClaim { }
 
     #[test]
-    pub fn sign_data() {
+    pub fn sign_data_hmac() {
         let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
         let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ=";
         let data = format!("{}.{}", header, claims);
 
-        let sig = sign(&*data, "secret".as_bytes(), MessageDigest::sha256());
+        let sig = sign_hmac(&*data, "secret".as_bytes(), MessageDigest::sha256());
 
         assert_eq!(sig, real_sig);
     }
@@ -88,13 +83,13 @@ mod tests {
     }
 
     #[test]
-    pub fn verify_data() {
+    pub fn verify_data_hmac() {
         let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
         let target = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let data = format!("{}.{}", header, claims);
 
-        assert!(verify(target, &*data, "secret".as_bytes(), MessageDigest::sha256()));
+        assert!(verify_hmac(target, &*data, "secret".as_bytes(), MessageDigest::sha256()));
     }
 
     #[test]

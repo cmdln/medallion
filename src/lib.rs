@@ -97,7 +97,7 @@ impl<H, C> Token<H, C>
         let sig = pieces[0];
         let data = pieces[1];
 
-        crypt::verify(sig, data, key, digest)
+        crypt::verify_hmac(sig, data, key, digest)
     }
 
     fn verify_rsa(&self, key: &[u8], digest: MessageDigest) -> bool {
@@ -130,7 +130,7 @@ impl<H, C> Token<H, C>
         let claims = try!(self.claims.to_base64());
         let data = format!("{}.{}", header, claims);
 
-        let sig = crypt::sign(&*data, key, digest);
+        let sig = crypt::sign_hmac(&*data, key, digest);
         Ok(format!("{}.{}", data, sig))
     }
 
