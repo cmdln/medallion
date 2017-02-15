@@ -1,9 +1,32 @@
 use base64::{decode_config, encode_config, URL_SAFE};
+use header::Algorithm;
 use openssl::hash::MessageDigest;
 use openssl::memcmp;
 use openssl::pkey::PKey;
 use openssl::rsa::Rsa;
 use openssl::sign::{Signer, Verifier};
+
+pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> String {
+    match algorithm {
+        &Algorithm::HS256 => sign_hmac(data, key, MessageDigest::sha256()),
+        &Algorithm::HS384 => sign_hmac(data, key, MessageDigest::sha384()),
+        &Algorithm::HS512 => sign_hmac(data, key, MessageDigest::sha512()),
+        &Algorithm::RS256 => sign_rsa(data, key, MessageDigest::sha256()),
+        &Algorithm::RS384 => sign_rsa(data, key, MessageDigest::sha384()),
+        &Algorithm::RS512 => sign_rsa(data, key, MessageDigest::sha512()),
+    }
+}
+
+pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> bool {
+    match algorithm {
+        &Algorithm::HS256 => verify_hmac(target, data, key, MessageDigest::sha256()),
+        &Algorithm::HS384 => verify_hmac(target, data, key, MessageDigest::sha384()),
+        &Algorithm::HS512 => verify_hmac(target, data, key, MessageDigest::sha512()),
+        &Algorithm::RS256 => verify_rsa(target, data, key, MessageDigest::sha256()),
+        &Algorithm::RS384 => verify_rsa(target, data, key, MessageDigest::sha384()),
+        &Algorithm::RS512 => verify_rsa(target, data, key, MessageDigest::sha512()),
+    }
+}
 
 pub fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> String {
     let secret_key = PKey::hmac(key).unwrap();
@@ -48,10 +71,11 @@ pub fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest
 
 #[cfg(test)]
 mod tests {
-    use super::{sign_hmac, sign_rsa, verify_hmac, verify_rsa};
+    use header::Algorithm;
+    use openssl::hash::MessageDigest;
     use std::io::{Error, Read};
     use std::fs::File;
-    use openssl::hash::MessageDigest;
+    use super::{sign, sign_hmac, sign_rsa, verify, verify_hmac, verify_rsa};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct EmptyClaim { }
@@ -63,7 +87,8 @@ mod tests {
         let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ=";
         let data = format!("{}.{}", header, claims);
 
-        let sig = sign_hmac(&*data, "secret".as_bytes(), MessageDigest::sha256());
+        //let sig = sign_hmac(&*data, "secret".as_bytes(), MessageDigest::sha256());
+        let sig = sign(&*data, "secret".as_bytes(), &Algorithm::HS256);
 
         assert_eq!(sig, real_sig);
     }
