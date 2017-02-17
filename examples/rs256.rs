@@ -10,7 +10,7 @@ use medallion::{
     Token,
 };
 
-fn load_key(keypath: &str) -> Result<String, Error> {
+fn load_pem(keypath: &str) -> Result<String, Error> {
     let mut key_file = File::open(keypath)?;
     let mut key = String::new();
     key_file.read_to_string(&mut key)?;
@@ -34,13 +34,13 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
     };
     let token = Token::new(header, claims);
 
-    token.signed(load_key("./privateKey.pem").unwrap().as_bytes()).ok()
+    token.signed(load_pem("./privateKey.pem").unwrap().as_bytes()).ok()
 }
 
 fn login(token: &str) -> Option<String> {
     let token = Token::<DefaultHeader, Registered>::parse(token).unwrap();
 
-    if token.verify(load_key("./publicKey.pub").unwrap().as_bytes()).unwrap() {
+    if token.verify(load_pem("./publicKey.pub").unwrap().as_bytes()).unwrap() {
         token.claims.sub
     } else {
         None

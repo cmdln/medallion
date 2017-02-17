@@ -123,10 +123,9 @@ impl<H, C> PartialEq for Token<H, C>
 mod tests {
     use Claims;
     use Token;
+    use crypt::tests::load_pem;
     use header::Algorithm::{HS256,RS512};
     use header::DefaultHeader;
-    use std::io::{Error, Read};
-    use std::fs::File;
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct EmptyClaim { }
@@ -162,19 +161,12 @@ mod tests {
             },
             ..Default::default()
         };
-        let private_key = load_key("./examples/privateKey.pem").unwrap();
+        let private_key = load_pem("./examples/privateKey.pem").unwrap();
         let raw = token.signed(private_key.as_bytes()).unwrap();
         let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
-        let public_key = load_key("./examples/publicKey.pub").unwrap();
+        let public_key = load_pem("./examples/publicKey.pub").unwrap();
         assert!(same.verify(public_key.as_bytes()).unwrap());
-    }
-
-    fn load_key(keypath: &str) -> Result<String, Error> {
-        let mut key_file = File::open(keypath)?;
-        let mut key = String::new();
-        key_file.read_to_string(&mut key)?;
-        Ok(key)
     }
 }
