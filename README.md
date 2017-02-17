@@ -1,4 +1,6 @@
-# Medallion [![Build Status](https://travis-ci.org/commandline/medallion.svg?branch=master)](https://travis-ci.org/commandline/medallion)
+Medallion
+=========
+[![Build Status](https://travis-ci.org/commandline/medallion.svg?branch=master)](https://travis-ci.org/commandline/medallion)
 [![Crates.io Status](http://meritbadge.herokuapp.com/medallion)](https://crates.io/crates/medallion)
 [![Documentation](https://docs.rs/medallion/badge.svg)](https://docs.rs/medallion)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/commandline/medallion/master/LICENSE)
