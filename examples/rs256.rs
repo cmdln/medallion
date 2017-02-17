@@ -40,7 +40,7 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
 fn login(token: &str) -> Option<String> {
     let token = Token::<DefaultHeader, Registered>::parse(token).unwrap();
 
-    if token.verify(load_key("./publicKey.pub").unwrap().as_bytes()) {
+    if token.verify(load_key("./publicKey.pub").unwrap().as_bytes()).unwrap() {
         token.claims.sub
     } else {
         None

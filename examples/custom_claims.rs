@@ -35,7 +35,7 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
 fn login(token: &str) -> Option<String> {
     let token = Token::<DefaultHeader, Custom>::parse(token).unwrap();
 
-    if token.verify(b"secret_key") {
+    if token.verify(b"secret_key").unwrap() {
         Some(token.claims.sub)
     } else {
         None

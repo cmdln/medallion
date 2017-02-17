@@ -5,8 +5,9 @@ use openssl::memcmp;
 use openssl::pkey::PKey;
 use openssl::rsa::Rsa;
 use openssl::sign::{Signer, Verifier};
+use super::Result;
 
-pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> String {
+pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> Result<String> {
     match algorithm {
         &Algorithm::HS256 => sign_hmac(data, key, MessageDigest::sha256()),
         &Algorithm::HS384 => sign_hmac(data, key, MessageDigest::sha384()),
@@ -17,7 +18,7 @@ pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> String {
     }
 }
 
-pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> bool {
+pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> Result<bool> {
     match algorithm {
         &Algorithm::HS256 => verify_hmac(target, data, key, MessageDigest::sha256()),
         &Algorithm::HS384 => verify_hmac(target, data, key, MessageDigest::sha384()),
@@ -28,45 +29,45 @@ pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> bo
     }
 }
 
-fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> String {
-    let secret_key = PKey::hmac(key).unwrap();
+fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
+    let secret_key = try!(PKey::hmac(key));
 
-    let mut signer = Signer::new(digest, &secret_key).unwrap();
-    signer.update(data.as_bytes()).unwrap();
+    let mut signer = Signer::new(digest, &secret_key)?;
+    signer.update(data.as_bytes())?;
 
-    let mac = signer.finish().unwrap();
-    encode_config(&mac, URL_SAFE)
+    let mac = signer.finish()?;
+    Ok(encode_config(&mac, URL_SAFE))
 }
 
-fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> String {
-    let private_key = Rsa::private_key_from_pem(key).unwrap();
-    let pkey = PKey::from_rsa(private_key).unwrap();
+fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
+    let private_key = Rsa::private_key_from_pem(key)?;
+    let pkey = PKey::from_rsa(private_key)?;
 
-    let mut signer = Signer::new(digest, &pkey).unwrap();
-    signer.update(data.as_bytes()).unwrap();
-    let sig = signer.finish().unwrap();
-    encode_config(&sig, URL_SAFE)
+    let mut signer = Signer::new(digest, &pkey)?;
+    signer.update(data.as_bytes())?;
+    let sig = signer.finish()?;
+    Ok(encode_config(&sig, URL_SAFE))
 }
 
-fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
-    let target_bytes: Vec<u8> = decode_config(target, URL_SAFE).unwrap();
-    let secret_key = PKey::hmac(key).unwrap();
+fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> Result<bool> {
+    let target_bytes: Vec<u8> = decode_config(target, URL_SAFE)?;
+    let secret_key = PKey::hmac(key)?;
 
-    let mut signer = Signer::new(digest, &secret_key).unwrap();
-    signer.update(data.as_bytes()).unwrap();
+    let mut signer = Signer::new(digest, &secret_key)?;
+    signer.update(data.as_bytes())?;
 
-    let mac = signer.finish().unwrap();
+    let mac = signer.finish()?;
 
-    memcmp::eq(&mac, &target_bytes)
+    Ok(memcmp::eq(&mac, &target_bytes))
 }
 
-fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) -> bool {
-    let signature_bytes: Vec<u8> = decode_config(signature, URL_SAFE).unwrap();
-    let public_key = Rsa::public_key_from_pem(key).unwrap();
-    let pkey = PKey::from_rsa(public_key).unwrap();
-    let mut verifier = Verifier::new(digest, &pkey).unwrap();
-    verifier.update(data.as_bytes()).unwrap();
-    verifier.finish(&signature_bytes).unwrap()
+fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) -> Result<bool> {
+    let signature_bytes: Vec<u8> = decode_config(signature, URL_SAFE)?;
+    let public_key = Rsa::public_key_from_pem(key)?;
+    let pkey = PKey::from_rsa(public_key)?;
+    let mut verifier = Verifier::new(digest, &pkey)?;
+    verifier.update(data.as_bytes())?;
+    Ok(try!(verifier.finish(&signature_bytes)))
 }
 
 #[cfg(test)]
@@ -88,7 +89,7 @@ mod tests {
 
         let sig = sign(&*data, "secret".as_bytes(), &Algorithm::HS256);
 
-        assert_eq!(sig, real_sig);
+        assert_eq!(sig.unwrap(), real_sig);
     }
 
     #[test]
@@ -102,7 +103,7 @@ mod tests {
 
         let sig = sign(&*data, key.as_bytes(), &Algorithm::RS256);
 
-        assert_eq!(sig.trim(), real_sig);
+        assert_eq!(sig.unwrap(), real_sig);
     }
 
     #[test]
@@ -112,7 +113,7 @@ mod tests {
         let target = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let data = format!("{}.{}", header, claims);
 
-        assert!(verify(target, &*data, "secret".as_bytes(), &Algorithm::HS256));
+        assert!(verify(target, &*data, "secret".as_bytes(), &Algorithm::HS256).unwrap());
     }
 
     #[test]
@@ -123,7 +124,7 @@ mod tests {
         let data = format!("{}.{}", header, claims);
 
         let key = load_key("./examples/publicKey.pub").unwrap();
-        assert!(verify(&real_sig, &*data, key.as_bytes(), &Algorithm::RS256));
+        assert!(verify(&real_sig, &*data, key.as_bytes(), &Algorithm::RS256).unwrap());
     }
 
     fn load_key(keypath: &str) -> Result<String, Error> {

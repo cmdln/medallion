@@ -4,6 +4,7 @@ use error::Error;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::value::{Value};
+use super::Result;
 
 /// A default claim set, including the standard, or registered, claims and the ability to specify
 /// your own as private claims.
@@ -38,7 +39,7 @@ impl<T: Serialize + Deserialize> Claims<T>{
 impl<T: Serialize + Deserialize> Component for Claims<T> {
     /// This implementation  simply parses the base64 data twice, each time applying it to the
     /// registered and private claims.
-    fn from_base64(raw: &str) -> Result<Claims<T>, Error> {
+    fn from_base64(raw: &str) -> Result<Claims<T>> {
         let data = try!(decode_config(raw, URL_SAFE));
         let reg_claims: Registered = try!(serde_json::from_slice(&data));
 
@@ -53,7 +54,7 @@ impl<T: Serialize + Deserialize> Component for Claims<T> {
 
     /// Renders both the registered and private claims into a single consolidated JSON
     /// representation before encoding.
-    fn to_base64(&self) -> Result<String, Error> {
+    fn to_base64(&self) -> Result<String> {
         if let Value::Object(mut reg_map) = serde_json::to_value(&self.reg)? {
             if let Value::Object(pri_map) = serde_json::to_value(&self.private)? {
                 reg_map.extend(pri_map);

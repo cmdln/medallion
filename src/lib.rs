@@ -21,6 +21,8 @@ pub mod header;
 pub mod claims;
 mod crypt;
 
+pub type Result<T> = std::result::Result<T, Error>;
+
 /// Main struct representing a JSON Web Token, composed of a header and a set of claims.
 #[derive(Debug, Default)]
 pub struct Token<H, C>
@@ -38,8 +40,8 @@ pub trait Header {
 /// Any header or claims type must implement this trait in order to serialize and deserialize
 /// correctly.
 pub trait Component: Sized {
-    fn from_base64(raw: &str) -> Result<Self, Error>;
-    fn to_base64(&self) -> Result<String, Error>;
+    fn from_base64(raw: &str) -> Result<Self>;
+    fn to_base64(&self) -> Result<String>;
 }
 
 /// Provide a default implementation that should work in almost all cases.
@@ -47,14 +49,14 @@ impl<T> Component for T
     where T: Serialize + Deserialize + Sized {
 
     /// Parse from a string.
-    fn from_base64(raw: &str) -> Result<T, Error> {
+    fn from_base64(raw: &str) -> Result<T> {
         let data = try!(decode_config(raw, URL_SAFE));
         let s = try!(String::from_utf8(data));
         Ok(try!(serde_json::from_str(&*s)))
     }
 
     /// Encode to a string.
-    fn to_base64(&self) -> Result<String, Error> {
+    fn to_base64(&self) -> Result<String> {
         let s = try!(serde_json::to_string(&self));
         let enc = encode_config((&*s).as_bytes(), URL_SAFE);
         Ok(enc)
@@ -73,7 +75,7 @@ impl<H, C> Token<H, C>
     }
 
     /// Parse a token from a string.
-    pub fn parse(raw: &str) -> Result<Token<H, C>, Error> {
+    pub fn parse(raw: &str) -> Result<Token<H, C>> {
         let pieces: Vec<_> = raw.split('.').collect();
 
         Ok(Token {
@@ -84,27 +86,27 @@ impl<H, C> Token<H, C>
     }
 
     /// Verify a token with a key and the token's specific algorithm.
-    pub fn verify(&self, key: &[u8]) -> bool {
+    pub fn verify(&self, key: &[u8]) -> Result<bool> {
         let raw = match self.raw {
             Some(ref s) => s,
-            None => return false,
+            None => return Ok(false),
         };
 
         let pieces: Vec<_> = raw.rsplitn(2, '.').collect();
         let sig = pieces[0];
         let data = pieces[1];
 
-        crypt::verify(sig, data, key, &self.header.alg())
+        Ok(crypt::verify(sig, data, key, &self.header.alg())?)
     }
 
     /// Generate the signed token from a key with the specific algorithm as a url-safe, base64
     /// string.
-    pub fn signed(&self, key: &[u8]) -> Result<String, Error> {
+    pub fn signed(&self, key: &[u8]) -> Result<String> {
         let header = try!(Component::to_base64(&self.header));
         let claims = try!(self.claims.to_base64());
         let data = format!("{}.{}", header, claims);
 
-        let sig = crypt::sign(&*data, key, &self.header.alg());
+        let sig = crypt::sign(&*data, key, &self.header.alg())?;
         Ok(format!("{}.{}", data, sig))
     }
 }
@@ -137,7 +139,7 @@ mod tests {
         {
             assert_eq!(token.header.alg, HS256);
         }
-        assert!(token.verify("secret".as_bytes()));
+        assert!(token.verify("secret".as_bytes()).unwrap());
     }
 
     #[test]
@@ -148,7 +150,7 @@ mod tests {
         let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
-        assert!(same.verify(key));
+        assert!(same.verify(key).unwrap());
     }
 
     #[test]
@@ -166,7 +168,7 @@ mod tests {
 
         assert_eq!(token, same);
         let public_key = load_key("./examples/publicKey.pub").unwrap();
-        assert!(same.verify(public_key.as_bytes()));
+        assert!(same.verify(public_key.as_bytes()).unwrap());
     }
 
     fn load_key(keypath: &str) -> Result<String, Error> {

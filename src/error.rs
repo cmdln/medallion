@@ -1,6 +1,7 @@
 use base64::Base64Error;
 use serde_json;
 use std::string::FromUtf8Error;
+use openssl::error::ErrorStack;
 
 #[derive(Debug)]
 pub enum Error {
@@ -9,6 +10,7 @@ pub enum Error {
     Base64(Base64Error),
     JSON(serde_json::Error),
     Custom(String),
+    Crypto(ErrorStack),
 }
 
 macro_rules! error_wrap {
@@ -22,3 +24,4 @@ macro_rules! error_wrap {
 error_wrap!(FromUtf8Error, Error::Utf8);
 error_wrap!(Base64Error, Error::Base64);
 error_wrap!(serde_json::Error, Error::JSON);
+error_wrap!(ErrorStack, Error::Crypto);
