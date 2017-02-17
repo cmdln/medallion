@@ -11,9 +11,9 @@ use medallion::{
 };
 
 fn load_key(keypath: &str) -> Result<String, Error> {
-    let mut key_file = try!(File::open(keypath));
+    let mut key_file = File::open(keypath)?;
     let mut key = String::new();
-    try!(key_file.read_to_string(&mut key));
+    key_file.read_to_string(&mut key)?;
     Ok(key)
 }
 

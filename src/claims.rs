@@ -40,10 +40,10 @@ impl<T: Serialize + Deserialize> Component for Claims<T> {
     /// This implementation  simply parses the base64 data twice, each time applying it to the
     /// registered and private claims.
     fn from_base64(raw: &str) -> Result<Claims<T>> {
-        let data = try!(decode_config(raw, URL_SAFE));
-        let reg_claims: Registered = try!(serde_json::from_slice(&data));
+        let data = decode_config(raw, URL_SAFE)?;
+        let reg_claims: Registered = serde_json::from_slice(&data)?;
 
-        let pri_claims: T = try!(serde_json::from_slice(&data));
+        let pri_claims: T = serde_json::from_slice(&data)?;
 
 
         Ok(Claims {
@@ -58,7 +58,7 @@ impl<T: Serialize + Deserialize> Component for Claims<T> {
         if let Value::Object(mut reg_map) = serde_json::to_value(&self.reg)? {
             if let Value::Object(pri_map) = serde_json::to_value(&self.private)? {
                 reg_map.extend(pri_map);
-                let s = try!(serde_json::to_string(&reg_map));
+                let s = serde_json::to_string(&reg_map)?;
                 let enc = encode_config((&*s).as_bytes(), URL_SAFE);
                 Ok(enc)
             } else {

@@ -30,7 +30,7 @@ pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> Re
 }
 
 fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
-    let secret_key = try!(PKey::hmac(key));
+    let secret_key = PKey::hmac(key)?;
 
     let mut signer = Signer::new(digest, &secret_key)?;
     signer.update(data.as_bytes())?;
@@ -67,7 +67,7 @@ fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) ->
     let pkey = PKey::from_rsa(public_key)?;
     let mut verifier = Verifier::new(digest, &pkey)?;
     verifier.update(data.as_bytes())?;
-    Ok(try!(verifier.finish(&signature_bytes)))
+    Ok(verifier.finish(&signature_bytes)?)
 }
 
 #[cfg(test)]
@@ -128,9 +128,9 @@ mod tests {
     }
 
     fn load_key(keypath: &str) -> Result<String, Error> {
-        let mut key_file = try!(File::open(keypath));
+        let mut key_file = File::open(keypath)?;
         let mut key = String::new();
-        try!(key_file.read_to_string(&mut key));
+        key_file.read_to_string(&mut key)?;
         Ok(key)
     }
 }

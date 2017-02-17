@@ -50,14 +50,14 @@ impl<T> Component for T
 
     /// Parse from a string.
     fn from_base64(raw: &str) -> Result<T> {
-        let data = try!(decode_config(raw, URL_SAFE));
-        let s = try!(String::from_utf8(data));
-        Ok(try!(serde_json::from_str(&*s)))
+        let data = decode_config(raw, URL_SAFE)?;
+        let s = String::from_utf8(data)?;
+        Ok(serde_json::from_str(&*s)?)
     }
 
     /// Encode to a string.
     fn to_base64(&self) -> Result<String> {
-        let s = try!(serde_json::to_string(&self));
+        let s = serde_json::to_string(&self)?;
         let enc = encode_config((&*s).as_bytes(), URL_SAFE);
         Ok(enc)
     }
@@ -80,8 +80,8 @@ impl<H, C> Token<H, C>
 
         Ok(Token {
             raw: Some(raw.into()),
-            header: try!(Component::from_base64(pieces[0])),
-            claims: try!(Component::from_base64(pieces[1])),
+            header: Component::from_base64(pieces[0])?,
+            claims: Component::from_base64(pieces[1])?,
         })
     }
 
@@ -102,8 +102,8 @@ impl<H, C> Token<H, C>
     /// Generate the signed token from a key with the specific algorithm as a url-safe, base64
     /// string.
     pub fn signed(&self, key: &[u8]) -> Result<String> {
-        let header = try!(Component::to_base64(&self.header));
-        let claims = try!(self.claims.to_base64());
+        let header = Component::to_base64(&self.header)?;
+        let claims = self.claims.to_base64()?;
         let data = format!("{}.{}", header, claims);
 
         let sig = crypt::sign(&*data, key, &self.header.alg())?;
@@ -172,9 +172,9 @@ mod tests {
     }
 
     fn load_key(keypath: &str) -> Result<String, Error> {
-        let mut key_file = try!(File::open(keypath));
+        let mut key_file = File::open(keypath)?;
         let mut key = String::new();
-        try!(key_file.read_to_string(&mut key));
+        key_file.read_to_string(&mut key)?;
         Ok(key)
     }
 }
