@@ -1,4 +1,4 @@
-use base64::{decode_config, encode_config, URL_SAFE};
+use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use Component;
 use error::Error;
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,7 @@ impl<T: Serialize + Deserialize> Component for Claims<T> {
     /// This implementation  simply parses the base64 data twice, each time applying it to the
     /// registered and private claims.
     fn from_base64(raw: &str) -> Result<Claims<T>> {
-        let data = decode_config(raw, URL_SAFE)?;
+        let data = decode_config(raw, URL_SAFE_NO_PAD)?;
         let reg_claims: Registered = serde_json::from_slice(&data)?;
 
         let pri_claims: T = serde_json::from_slice(&data)?;
@@ -59,7 +59,7 @@ impl<T: Serialize + Deserialize> Component for Claims<T> {
             if let Value::Object(pri_map) = serde_json::to_value(&self.private)? {
                 reg_map.extend(pri_map);
                 let s = serde_json::to_string(&reg_map)?;
-                let enc = encode_config((&*s).as_bytes(), URL_SAFE);
+                let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
                 Ok(enc)
             } else {
                 Err(Error::Custom("Could not access registered claims.".to_owned()))

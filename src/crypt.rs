@@ -1,4 +1,4 @@
-use base64::{decode_config, encode_config, URL_SAFE};
+use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use header::Algorithm;
 use openssl::hash::MessageDigest;
 use openssl::memcmp;
@@ -36,7 +36,7 @@ fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
     signer.update(data.as_bytes())?;
 
     let mac = signer.finish()?;
-    Ok(encode_config(&mac, URL_SAFE))
+    Ok(encode_config(&mac, URL_SAFE_NO_PAD))
 }
 
 fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
@@ -46,11 +46,11 @@ fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
     let mut signer = Signer::new(digest, &pkey)?;
     signer.update(data.as_bytes())?;
     let sig = signer.finish()?;
-    Ok(encode_config(&sig, URL_SAFE))
+    Ok(encode_config(&sig, URL_SAFE_NO_PAD))
 }
 
 fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> Result<bool> {
-    let target_bytes: Vec<u8> = decode_config(target, URL_SAFE)?;
+    let target_bytes: Vec<u8> = decode_config(target, URL_SAFE_NO_PAD)?;
     let secret_key = PKey::hmac(key)?;
 
     let mut signer = Signer::new(digest, &secret_key)?;
@@ -62,7 +62,7 @@ fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> R
 }
 
 fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) -> Result<bool> {
-    let signature_bytes: Vec<u8> = decode_config(signature, URL_SAFE)?;
+    let signature_bytes: Vec<u8> = decode_config(signature, URL_SAFE_NO_PAD)?;
     let public_key = Rsa::public_key_from_pem(key)?;
     let pkey = PKey::from_rsa(public_key)?;
     let mut verifier = Verifier::new(digest, &pkey)?;
@@ -84,7 +84,7 @@ pub mod tests {
     pub fn sign_data_hmac() {
         let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ=";
+        let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let data = format!("{}.{}", header, claims);
 
         let sig = sign(&*data, "secret".as_bytes(), &Algorithm::HS256);
@@ -96,7 +96,7 @@ pub mod tests {
     pub fn sign_data_rsa() {
         let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA==";
+        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
         let data = format!("{}.{}", header, claims);
 
         let key = load_pem("./examples/privateKey.pem").unwrap();

@@ -8,7 +8,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use base64::{decode_config, encode_config, URL_SAFE};
+use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use serde::{Serialize, Deserialize};
 pub use error::Error;
 pub use header::DefaultHeader;
@@ -50,7 +50,7 @@ impl<T> Component for T
 
     /// Parse from a string.
     fn from_base64(raw: &str) -> Result<T> {
-        let data = decode_config(raw, URL_SAFE)?;
+        let data = decode_config(raw, URL_SAFE_NO_PAD)?;
         let s = String::from_utf8(data)?;
         Ok(serde_json::from_str(&*s)?)
     }
@@ -58,7 +58,7 @@ impl<T> Component for T
     /// Encode to a string.
     fn to_base64(&self) -> Result<String> {
         let s = serde_json::to_string(&self)?;
-        let enc = encode_config((&*s).as_bytes(), URL_SAFE);
+        let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
         Ok(enc)
     }
 }
