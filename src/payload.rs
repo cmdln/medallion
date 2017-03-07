@@ -8,7 +8,7 @@ use super::Result;
 /// A default claim set, including the standard, or registered, claims and the ability to specify
 /// your own as custom claims.
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
-pub struct Claims<T: Serialize + Deserialize + PartialEq> {
+pub struct Payload<T: Serialize + Deserialize + PartialEq> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iss: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -24,25 +24,25 @@ pub struct Claims<T: Serialize + Deserialize + PartialEq> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jti: Option<String>,
     #[serde(skip_serializing)]
-    pub custom: Option<T>,
+    pub claims: Option<T>,
 }
 
 /// A convenient type alias that assumes the standard claims are sufficient, the empty tuple type
 /// satisfies Claims' generic parameter as simply and clearly as possible.
-pub type DefaultClaims = Claims<()>;
+pub type DefaultPayload = Payload<()>;
 
-impl<T: Serialize + Deserialize + PartialEq> Claims<T> {
+impl<T: Serialize + Deserialize + PartialEq> Payload<T> {
     /// This implementation simply parses the base64 data twice, first parsing out the standard
     /// claims then any custom claims, assigning the latter into a copy of the former before
     /// returning registered and custom claims.
-    pub fn from_base64(raw: &str) -> Result<Claims<T>> {
+    pub fn from_base64(raw: &str) -> Result<Payload<T>> {
         let data = decode_config(raw, URL_SAFE_NO_PAD)?;
 
-        let claims: Claims<T> = serde_json::from_slice(&data)?;
+        let claims: Payload<T> = serde_json::from_slice(&data)?;
 
         let custom: Option<T> = serde_json::from_slice(&data).ok();
 
-        Ok(Claims {
+        Ok(Payload {
             iss: claims.iss,
             sub: claims.sub,
             aud: claims.aud,
@@ -50,7 +50,7 @@ impl<T: Serialize + Deserialize + PartialEq> Claims<T> {
             nbf: claims.nbf,
             iat: claims.iat,
             jti: claims.jti,
-            custom: custom,
+            claims: custom,
         })
     }
 
@@ -58,7 +58,7 @@ impl<T: Serialize + Deserialize + PartialEq> Claims<T> {
     /// before encoding.
     pub fn to_base64(&self) -> Result<String> {
         if let Value::Object(mut claims_map) = serde_json::to_value(&self)? {
-            match self.custom {
+            match self.claims {
                 Some(ref custom) => {
                     if let Value::Object(custom_map) = serde_json::to_value(&custom)? {
                         claims_map.extend(custom_map);
@@ -85,7 +85,7 @@ impl<T: Serialize + Deserialize + PartialEq> Claims<T> {
 #[cfg(test)]
 mod tests {
     use std::default::Default;
-    use super::{Claims, DefaultClaims};
+    use super::{Payload, DefaultPayload};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct CustomClaims {
@@ -98,51 +98,51 @@ mod tests {
     #[test]
     fn from_base64() {
         let enc = "eyJhdWQiOiJsb2dpbl9zZXJ2aWNlIiwiZXhwIjoxMzAyMzE5MTAwLCJpYXQiOjEzMDIzMTcxMDAsImlzcyI6ImV4YW1wbGUuY29tIiwibmJmIjoxMzAyMzE3MTAwLCJzdWIiOiJSYW5kb20gVXNlciJ9";
-        let claims: DefaultClaims = Claims::from_base64(enc).unwrap();
+        let payload: DefaultPayload = Payload::from_base64(enc).unwrap();
 
-        assert_eq!(claims, create_default());
+        assert_eq!(payload, create_default());
     }
 
     #[test]
     fn custom_from_base64() {
         let enc = "eyJleHAiOjEzMDIzMTkxMDAsImZpcnN0X25hbWUiOiJSYW5kb20iLCJpYXQiOjEzMDIzMTcxMDAsImlzX2FkbWluIjpmYWxzZSwiaXNzIjoiZXhhbXBsZS5jb20iLCJsYXN0X25hbWUiOiJVc2VyIiwidXNlcl9pZCI6IjEyMzQ1NiJ9";
-        let claims: Claims<CustomClaims> = Claims::from_base64(enc).unwrap();
+        let payload: Payload<CustomClaims> = Payload::from_base64(enc).unwrap();
 
-        assert_eq!(claims, create_custom());
+        assert_eq!(payload, create_custom());
     }
 
     #[test]
     fn to_base64() {
         let enc = "eyJhdWQiOiJsb2dpbl9zZXJ2aWNlIiwiZXhwIjoxMzAyMzE5MTAwLCJpYXQiOjEzMDIzMTcxMDAsImlzcyI6ImV4YW1wbGUuY29tIiwibmJmIjoxMzAyMzE3MTAwLCJzdWIiOiJSYW5kb20gVXNlciJ9";
-        let claims = create_default();
+        let payload = create_default();
 
-        assert_eq!(enc, claims.to_base64().unwrap());
+        assert_eq!(enc, payload.to_base64().unwrap());
     }
 
     #[test]
     fn custom_to_base64() {
         let enc = "eyJleHAiOjEzMDIzMTkxMDAsImZpcnN0X25hbWUiOiJSYW5kb20iLCJpYXQiOjEzMDIzMTcxMDAsImlzX2FkbWluIjpmYWxzZSwiaXNzIjoiZXhhbXBsZS5jb20iLCJsYXN0X25hbWUiOiJVc2VyIiwidXNlcl9pZCI6IjEyMzQ1NiJ9";
-        let claims = create_custom();
+        let payload = create_custom();
 
-        assert_eq!(enc, claims.to_base64().unwrap());
+        assert_eq!(enc, payload.to_base64().unwrap());
     }
 
     #[test]
     fn roundtrip() {
-        let claims = create_default();
-        let enc = claims.to_base64().unwrap();
-        assert_eq!(claims, Claims::from_base64(&*enc).unwrap());
+        let payload = create_default();
+        let enc = payload.to_base64().unwrap();
+        assert_eq!(payload, Payload::from_base64(&*enc).unwrap());
     }
 
     #[test]
     fn roundtrip_custom() {
-        let claims = create_custom();
-        let enc = claims.to_base64().unwrap();
-        assert_eq!(claims, Claims::<CustomClaims>::from_base64(&*enc).unwrap());
+        let payload = create_custom();
+        let enc = payload.to_base64().unwrap();
+        assert_eq!(payload, Payload::<CustomClaims>::from_base64(&*enc).unwrap());
     }
 
-    fn create_default() -> DefaultClaims {
-        DefaultClaims {
+    fn create_default() -> DefaultPayload {
+        DefaultPayload {
             aud: Some("login_service".into()),
             iat: Some(1302317100),
             iss: Some("example.com".into()),
@@ -153,12 +153,12 @@ mod tests {
         }
     }
 
-    fn create_custom() -> Claims<CustomClaims> {
-        Claims {
+    fn create_custom() -> Payload<CustomClaims> {
+        Payload {
             iss: Some("example.com".into()),
             iat: Some(1302317100),
             exp: Some(1302319100),
-            custom: Some(CustomClaims {
+            claims: Some(CustomClaims {
                 user_id: "123456".into(),
                 is_admin: false,
                 first_name: Some("Random".into()),

@@ -4,7 +4,7 @@ extern crate serde_derive;
 extern crate medallion;
 
 use std::default::Default;
-use medallion::{DefaultClaims, Header, DefaultToken};
+use medallion::{DefaultPayload, Header, DefaultToken};
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 struct Custom {
@@ -24,8 +24,8 @@ fn new_token(sub: &str, password: &str) -> Option<String> {
         headers: Some(Custom { typ: "JWT".into(), ..Default::default() }),
         ..Default::default()
     };
-    let claims = DefaultClaims { sub: Some(sub.into()), ..Default::default() };
-    let token = DefaultToken::new(header, claims);
+    let payload = DefaultPayload { sub: Some(sub.into()), ..Default::default() };
+    let token = DefaultToken::new(header, payload);
 
     token.sign(b"secret_key").ok()
 }
@@ -34,7 +34,7 @@ fn login(token: &str) -> Option<String> {
     let token = DefaultToken::<Custom>::parse(token).unwrap();
 
     if token.verify(b"secret_key").unwrap() {
-        Some(token.claims.sub.unwrap())
+        Some(token.payload.sub.unwrap())
     } else {
         None
     }

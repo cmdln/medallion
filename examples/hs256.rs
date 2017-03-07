@@ -1,7 +1,7 @@
 extern crate medallion;
 
 use std::default::Default;
-use medallion::{Header, DefaultClaims, DefaultToken};
+use medallion::{Header, DefaultPayload, DefaultToken};
 
 fn new_token(user_id: &str, password: &str) -> Option<String> {
     // Dummy auth
@@ -11,12 +11,12 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
 
     // can satisfy Header's generic parameter with an empty type
     let header: Header<()> = Default::default();
-    let claims = DefaultClaims {
+    let payload = DefaultPayload {
         iss: Some("example.com".into()),
         sub: Some(user_id.into()),
         ..Default::default()
     };
-    let token = DefaultToken::new(header, claims);
+    let token = DefaultToken::new(header, payload);
 
     token.sign(b"secret_key").ok()
 }
@@ -25,7 +25,7 @@ fn login(token: &str) -> Option<String> {
     let token: DefaultToken<()> = DefaultToken::parse(token).unwrap();
 
     if token.verify(b"secret_key").unwrap() {
-        token.claims.sub
+        token.payload.sub
     } else {
         None
     }

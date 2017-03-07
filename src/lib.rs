@@ -12,17 +12,17 @@ use serde::{Serialize, Deserialize};
 pub use error::Error;
 pub use header::Header;
 pub use header::Algorithm;
-pub use claims::{Claims, DefaultClaims};
+pub use payload::{Payload, DefaultPayload};
 
 pub mod error;
-pub mod header;
-pub mod claims;
+mod header;
+mod payload;
 mod crypt;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// A convenient type that bins the same type parameter for the custom claims, an empty tuple, as
-/// DefaultClaims so that the two aliases may be used together to reduce boilerplate when not
+/// DefaultPayload so that the two aliases may be used together to reduce boilerplate when not
 /// custom claims are needed.
 pub type DefaultToken<H> = Token<H, ()>;
 
@@ -34,7 +34,7 @@ pub struct Token<H, C>
 {
     raw: Option<String>,
     pub header: Header<H>,
-    pub claims: Claims<C>,
+    pub payload: Payload<C>,
 }
 
 /// Provide the ability to parse a token, verify it and sign/serialize it.
@@ -42,11 +42,11 @@ impl<H, C> Token<H, C>
     where H: Serialize + Deserialize + PartialEq,
           C: Serialize + Deserialize + PartialEq
 {
-    pub fn new(header: Header<H>, claims: Claims<C>) -> Token<H, C> {
+    pub fn new(header: Header<H>, payload: Payload<C>) -> Token<H, C> {
         Token {
             raw: None,
             header: header,
-            claims: claims,
+            payload: payload,
         }
     }
 
@@ -57,7 +57,7 @@ impl<H, C> Token<H, C>
         Ok(Token {
             raw: Some(raw.into()),
             header: Header::from_base64(pieces[0])?,
-            claims: Claims::from_base64(pieces[1])?,
+            payload: Payload::from_base64(pieces[1])?,
         })
     }
 
@@ -79,8 +79,8 @@ impl<H, C> Token<H, C>
     /// string.
     pub fn sign(&self, key: &[u8]) -> Result<String> {
         let header = self.header.to_base64()?;
-        let claims = self.claims.to_base64()?;
-        let data = format!("{}.{}", header, claims);
+        let payload = self.payload.to_base64()?;
+        let data = format!("{}.{}", header, payload);
 
         let sig = crypt::sign(&*data, key, &self.header.alg)?;
         Ok(format!("{}.{}", data, sig))
@@ -92,7 +92,7 @@ impl<H, C> PartialEq for Token<H, C>
           C: Serialize + Deserialize + PartialEq
 {
     fn eq(&self, other: &Token<H, C>) -> bool {
-        self.header == other.header && self.claims == other.claims
+        self.header == other.header && self.payload == other.payload
     }
 }
 
