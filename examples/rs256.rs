@@ -3,12 +3,7 @@ extern crate medallion;
 use std::default::Default;
 use std::fs::File;
 use std::io::{Error, Read};
-use medallion::{
-    Algorithm,
-    Header,
-    Claims,
-    Token,
-};
+use medallion::{Algorithm, Header, Claims, Token};
 
 fn load_pem(keypath: &str) -> Result<String, Error> {
     let mut key_file = File::open(keypath)?;
@@ -20,14 +15,11 @@ fn load_pem(keypath: &str) -> Result<String, Error> {
 fn new_token(user_id: &str, password: &str) -> Option<String> {
     // Dummy auth
     if password != "password" {
-        return None
+        return None;
     }
 
     // can satisfy Header's generic parameter with an empty type
-    let header: Header<()> = Header {
-        alg: Algorithm::RS256,
-        ..Default::default()
-    };
+    let header: Header<()> = Header { alg: Algorithm::RS256, ..Default::default() };
     let claims: Claims<()> = Claims {
         iss: Some("example.com".into()),
         sub: Some(user_id.into()),

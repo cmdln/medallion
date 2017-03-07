@@ -1,16 +1,12 @@
 extern crate medallion;
 
 use std::default::Default;
-use medallion::{
-    Header,
-    DefaultClaims,
-    DefaultToken,
-};
+use medallion::{Header, DefaultClaims, DefaultToken};
 
 fn new_token(user_id: &str, password: &str) -> Option<String> {
     // Dummy auth
     if password != "password" {
-        return None
+        return None;
     }
 
     // can satisfy Header's generic parameter with an empty type

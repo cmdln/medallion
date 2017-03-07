@@ -4,11 +4,7 @@ extern crate serde_derive;
 extern crate medallion;
 
 use std::default::Default;
-use medallion::{
-    Claims,
-    Header,
-    Token,
-};
+use medallion::{Claims, Header, Token};
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 struct Custom {
@@ -22,7 +18,7 @@ struct Custom {
 fn new_token(user_id: &str, password: &str) -> Option<String> {
     // Dummy auth
     if password != "password" {
-        return None
+        return None;
     }
 
     let header: Header<()> = Default::default();

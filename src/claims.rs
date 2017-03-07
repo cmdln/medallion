@@ -24,7 +24,7 @@ pub struct Claims<T: Serialize + Deserialize + PartialEq> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jti: Option<String>,
     #[serde(skip_serializing)]
-    pub custom: Option<T>
+    pub custom: Option<T>,
 }
 
 /// A convenient type alias that assumes the standard claims are sufficient, the empty tuple type
@@ -33,8 +33,8 @@ pub type DefaultClaims = Claims<()>;
 
 impl<T: Serialize + Deserialize + PartialEq> Claims<T> {
     /// This implementation simply parses the base64 data twice, first parsing out the standard
-    /// claims then any custom claims, assigning the latter into a copy of the former before returning
-    /// registered and custom claims.
+    /// claims then any custom claims, assigning the latter into a copy of the former before
+    /// returning registered and custom claims.
     pub fn from_base64(raw: &str) -> Result<Claims<T>> {
         let data = decode_config(raw, URL_SAFE_NO_PAD)?;
 
@@ -68,12 +68,12 @@ impl<T: Serialize + Deserialize + PartialEq> Claims<T> {
                     } else {
                         Err(Error::Custom("Could not access custom claims.".to_owned()))
                     }
-                },
+                }
                 None => {
                     let s = serde_json::to_string(&claims_map)?;
                     let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
                     return Ok(enc);
-                },
+                }
             }
         } else {
             Err(Error::Custom("Could not access standard claims.".to_owned()))
@@ -92,7 +92,7 @@ mod tests {
         user_id: String,
         is_admin: bool,
         first_name: Option<String>,
-        last_name: Option<String>
+        last_name: Option<String>,
     }
 
     #[test]

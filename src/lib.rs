@@ -20,6 +20,7 @@ pub mod claims;
 mod crypt;
 
 pub type Result<T> = std::result::Result<T, Error>;
+
 /// A convenient type that bins the same type parameter for the custom claims, an empty tuple, as
 /// DefaultClaims so that the two aliases may be used together to reduce boilerplate when not
 /// custom claims are needed.
@@ -28,15 +29,19 @@ pub type DefaultToken<H> = Token<H, ()>;
 /// Main struct representing a JSON Web Token, composed of a header and a set of claims.
 #[derive(Debug, Default)]
 pub struct Token<H, C>
-    where H: Serialize + Deserialize + PartialEq, C: Serialize + Deserialize + PartialEq {
+    where H: Serialize + Deserialize + PartialEq,
+          C: Serialize + Deserialize + PartialEq
+{
     raw: Option<String>,
     pub header: Header<H>,
     pub claims: Claims<C>,
 }
 
 /// Provide the ability to parse a token, verify it and sign/serialize it.
-impl<H,C> Token<H, C>
-    where H: Serialize + Deserialize + PartialEq, C: Serialize + Deserialize + PartialEq {
+impl<H, C> Token<H, C>
+    where H: Serialize + Deserialize + PartialEq,
+          C: Serialize + Deserialize + PartialEq
+{
     pub fn new(header: Header<H>, claims: Claims<C>) -> Token<H, C> {
         Token {
             raw: None,
@@ -46,7 +51,7 @@ impl<H,C> Token<H, C>
     }
 
     /// Parse a token from a string.
-    pub fn parse(raw: &str) -> Result<Token<H,C>> {
+    pub fn parse(raw: &str) -> Result<Token<H, C>> {
         let pieces: Vec<_> = raw.split('.').collect();
 
         Ok(Token {
@@ -82,11 +87,12 @@ impl<H,C> Token<H, C>
     }
 }
 
-impl<H,C> PartialEq for Token<H,C>
-    where H: Serialize + Deserialize + PartialEq, C: Serialize + Deserialize + PartialEq {
-    fn eq(&self, other: &Token<H,C>) -> bool {
-        self.header == other.header &&
-        self.claims == other.claims
+impl<H, C> PartialEq for Token<H, C>
+    where H: Serialize + Deserialize + PartialEq,
+          C: Serialize + Deserialize + PartialEq
+{
+    fn eq(&self, other: &Token<H, C>) -> bool {
+        self.header == other.header && self.claims == other.claims
     }
 }
 
@@ -94,11 +100,13 @@ impl<H,C> PartialEq for Token<H,C>
 mod tests {
     use {DefaultToken, Header};
     use crypt::tests::load_pem;
-    use super::Algorithm::{HS256,RS512};
+    use super::Algorithm::{HS256, RS512};
 
     #[test]
     pub fn raw_data() {
-        let raw = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
+        let raw = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\
+                   eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.\
+                   TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let token = DefaultToken::<()>::parse(raw).unwrap();
 
         {
@@ -120,14 +128,8 @@ mod tests {
 
     #[test]
     pub fn roundtrip_rsa() {
-        let header: Header<()> = Header {
-            alg: RS512,
-            ..Default::default()
-        };
-        let token = DefaultToken {
-            header: header,
-            ..Default::default()
-        };
+        let header: Header<()> = Header { alg: RS512, ..Default::default() };
+        let token = DefaultToken { header: header, ..Default::default() };
         let private_key = load_pem("./examples/privateKey.pem").unwrap();
         let raw = token.sign(private_key.as_bytes()).unwrap();
         let same = DefaultToken::parse(&*raw).unwrap();

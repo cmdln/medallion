@@ -77,9 +77,6 @@ pub mod tests {
     use std::fs::File;
     use super::{sign, verify};
 
-    #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
-    struct EmptyClaim { }
-
     #[test]
     pub fn sign_data_hmac() {
         let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
