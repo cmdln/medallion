@@ -4,42 +4,37 @@ extern crate serde_derive;
 extern crate medallion;
 
 use std::default::Default;
-use medallion::{Payload, Header, Token};
+use medallion::{DefaultPayload, Header, DefaultToken};
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 struct Custom {
-    user_id: String,
     // useful if you want a None to not appear in the serialized JSON
     #[serde(skip_serializing_if = "Option::is_none")]
-    email: Option<String>,
-    rhino: bool,
+    kid: Option<String>,
+    typ: String,
 }
 
-fn new_token(user_id: &str, password: &str) -> Option<String> {
+fn new_token(sub: &str, password: &str) -> Option<String> {
     // Dummy auth
     if password != "password" {
         return None;
     }
 
-    let header: Header<()> = Default::default();
-    let payload = Payload {
-        claims: Some(Custom {
-            user_id: user_id.into(),
-            rhino: true,
-            ..Default::default()
-        }),
+    let header = Header {
+        headers: Some(Custom { typ: "JWT".into(), ..Default::default() }),
         ..Default::default()
     };
-    let token = Token::new(header, payload);
+    let payload = DefaultPayload { sub: Some(sub.into()), ..Default::default() };
+    let token = DefaultToken::new(header, payload);
 
     token.sign(b"secret_key").ok()
 }
 
 fn login(token: &str) -> Option<String> {
-    let token = Token::<(), Custom>::parse(token).unwrap();
+    let token = DefaultToken::<Custom>::parse(token).unwrap();
 
     if token.verify(b"secret_key").unwrap() {
-        Some(token.payload.claims.unwrap().user_id)
+        Some(token.payload.sub.unwrap())
     } else {
         None
     }

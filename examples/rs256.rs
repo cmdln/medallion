@@ -3,12 +3,7 @@ extern crate medallion;
 use std::default::Default;
 use std::fs::File;
 use std::io::{Error, Read};
-use medallion::{
-    Algorithm,
-    DefaultHeader,
-    Registered,
-    Token,
-};
+use medallion::{Algorithm, Header, DefaultPayload, DefaultToken};
 
 fn load_pem(keypath: &str) -> Result<String, Error> {
     let mut key_file = File::open(keypath)?;
@@ -20,28 +15,28 @@ fn load_pem(keypath: &str) -> Result<String, Error> {
 fn new_token(user_id: &str, password: &str) -> Option<String> {
     // Dummy auth
     if password != "password" {
-        return None
+        return None;
     }
 
-    let header: DefaultHeader = DefaultHeader {
-        alg: Algorithm::RS256,
-        ..Default::default()
-    };
-    let claims = Registered {
+    // can satisfy Header's generic parameter with an empty type
+    let header: Header<()> = Header { alg: Algorithm::RS256, ..Default::default() };
+    let payload: DefaultPayload = DefaultPayload {
         iss: Some("example.com".into()),
         sub: Some(user_id.into()),
         ..Default::default()
     };
-    let token = Token::new(header, claims);
+    let token = DefaultToken::new(header, payload);
 
-    token.signed(load_pem("./privateKey.pem").unwrap().as_bytes()).ok()
+    // this key was generated explicitly for these examples and is not used anywhere else
+    token.sign(load_pem("./privateKey.pem").unwrap().as_bytes()).ok()
 }
 
 fn login(token: &str) -> Option<String> {
-    let token = Token::<DefaultHeader, Registered>::parse(token).unwrap();
+    let token: DefaultToken<()> = DefaultToken::parse(token).unwrap();
 
+    // this key was generated explicitly for these examples and is not used anywhere else
     if token.verify(load_pem("./publicKey.pub").unwrap().as_bytes()).unwrap() {
-        token.claims.sub
+        token.payload.sub
     } else {
         None
     }
