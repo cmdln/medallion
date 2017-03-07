@@ -5,8 +5,8 @@ use std::fs::File;
 use std::io::{Error, Read};
 use medallion::{
     Algorithm,
-    DefaultHeader,
-    Registered,
+    Header,
+    Claims,
     Token,
 };
 
@@ -23,23 +23,26 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
         return None
     }
 
-    let header: DefaultHeader = DefaultHeader {
+    // can satisfy Header's generic parameter with an empty type
+    let header: Header<()> = Header {
         alg: Algorithm::RS256,
         ..Default::default()
     };
-    let claims = Registered {
+    let claims: Claims<()> = Claims {
         iss: Some("example.com".into()),
         sub: Some(user_id.into()),
         ..Default::default()
     };
     let token = Token::new(header, claims);
 
-    token.signed(load_pem("./privateKey.pem").unwrap().as_bytes()).ok()
+    // this key was generated explicitly for these examples and is not used anywhere else
+    token.sign(load_pem("./privateKey.pem").unwrap().as_bytes()).ok()
 }
 
 fn login(token: &str) -> Option<String> {
-    let token = Token::<DefaultHeader, Registered>::parse(token).unwrap();
+    let token: Token<Header<()>, Claims<()>> = Token::parse(token).unwrap();
 
+    // this key was generated explicitly for these examples and is not used anywhere else
     if token.verify(load_pem("./publicKey.pub").unwrap().as_bytes()).unwrap() {
         token.claims.sub
     } else {
