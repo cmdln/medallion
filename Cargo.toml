@@ -1,13 +1,13 @@
 [package]
 name = "medallion"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["Thomas Gideon <cmdln@thecommandline.net>"]
 description = "JWT library for rust using serde, serde_json and openssl"
 homepage = "http://github.com/commandline/medallion"
 repository = "http://github.com/commandline/medallion"
 documentation = "https://commandline.github.io/medallion/"
 readme = "README.md"
-keywords = ["JWT", "token", "web"]
+keywords = ["JWT", "token", "web", "JSON", "RSA"]
 license = "MIT"
 
 [dependencies]
