@@ -9,7 +9,7 @@ A JWT library for rust using serde, serde_json and openssl.
 
 ## Documentation
 
-- [Documentation] (https://commandline.github.io/medallion/)
+- [Documentation](https://commandline.github.io/medallion/)
 
 ## Usage
 
