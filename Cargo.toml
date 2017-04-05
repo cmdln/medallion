@@ -1,6 +1,6 @@
 [package]
 name = "medallion"
-version = "2.0.2"
+version = "2.1.0"
 authors = ["Thomas Gideon <cmdln@thecommandline.net>"]
 description = "JWT library for rust using serde, serde_json and openssl"
 homepage = "http://github.com/commandline/medallion"
@@ -16,3 +16,4 @@ openssl = "0.9"
 serde = "0.9"
 serde_json = "0.9"
 serde_derive = "0.9"
+time = "0.1"

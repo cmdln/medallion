@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::value::Value;
 use super::Result;
+use time::{self, Timespec};
 
 /// A default claim set, including the standard, or registered, claims and the ability to specify
 /// your own as custom claims.
@@ -80,11 +81,25 @@ impl<T: Serialize + Deserialize + PartialEq> Payload<T> {
         }
 
     }
+
+    pub fn verify(&self) -> bool {
+        let now = time::now().to_timespec();
+        let nbf_verified = match self.nbf {
+            Some(nbf_sec) => Timespec::new(nbf_sec as i64, 0) < now,
+            None => true,
+        };
+        let exp_verified = match self.exp {
+            Some(exp_sec) => now < Timespec::new(exp_sec as i64, 0),
+            None => true,
+        };
+        nbf_verified && exp_verified
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::default::Default;
+    use time::{self, Duration};
     use super::{Payload, DefaultPayload};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -139,6 +154,72 @@ mod tests {
         let payload = create_custom();
         let enc = payload.to_base64().unwrap();
         assert_eq!(payload, Payload::<CustomClaims>::from_base64(&*enc).unwrap());
+    }
+
+    #[test]
+    fn verify_nbf() {
+        let payload = create_with_nbf(5);
+        assert!(payload.verify());
+    }
+
+    #[test]
+    fn fail_nbf() {
+        let payload = create_with_nbf(-5);
+        assert_eq!(false, payload.verify());
+    }
+
+    #[test]
+    fn verify_exp() {
+        let payload = create_with_exp(5);
+        assert!(payload.verify());
+    }
+
+    #[test]
+    fn fail_exp() {
+        let payload = create_with_exp(-5);
+        assert_eq!(false, payload.verify());
+    }
+
+    #[test]
+    fn verify_nbf_exp() {
+        let payload = create_with_nbf_exp(5, 5);
+        assert!(payload.verify());
+    }
+
+    #[test]
+    fn fail_nbf_exp() {
+        let payload = create_with_nbf_exp(-5, -5);
+        assert_eq!(false, payload.verify());
+        let payload = create_with_nbf_exp(5, -5);
+        assert_eq!(false, payload.verify());
+        let payload = create_with_nbf_exp(-5, 5);
+        assert_eq!(false, payload.verify());
+    }
+
+    fn create_with_nbf(offset: i64) -> DefaultPayload {
+        let nbf = (time::now() - Duration::minutes(offset)).to_timespec().sec;
+        DefaultPayload {
+            nbf: Some(nbf as u64),
+            ..Default::default()
+        }
+    }
+
+    fn create_with_exp(offset: i64) -> DefaultPayload {
+        let exp = (time::now() + Duration::minutes(offset)).to_timespec().sec;
+        DefaultPayload {
+            exp: Some(exp as u64),
+            ..Default::default()
+        }
+    }
+
+    fn create_with_nbf_exp(nbf_offset: i64, exp_offset: i64) -> DefaultPayload {
+        let nbf = (time::now() - Duration::minutes(nbf_offset)).to_timespec().sec;
+        let exp = (time::now() + Duration::minutes(exp_offset)).to_timespec().sec;
+        DefaultPayload {
+            nbf: Some(nbf as u64),
+            exp: Some(exp as u64),
+            ..Default::default()
+        }
     }
 
     fn create_default() -> DefaultPayload {

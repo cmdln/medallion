@@ -7,6 +7,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate time;
 
 use serde::{Serialize, Deserialize};
 pub use error::Error;
@@ -72,7 +73,7 @@ impl<H, C> Token<H, C>
         let sig = pieces[0];
         let data = pieces[1];
 
-        Ok(crypt::verify(sig, data, key, &self.header.alg)?)
+        Ok(self.payload.verify() && crypt::verify(sig, data, key, &self.header.alg)?)
     }
 
     /// Generate the signed token from a key with the specific algorithm as a url-safe, base64
@@ -98,8 +99,10 @@ impl<H, C> PartialEq for Token<H, C>
 
 #[cfg(test)]
 mod tests {
-    use {DefaultToken, Header};
+    use {DefaultPayload, DefaultToken, Header};
     use crypt::tests::load_pem;
+    use std::default::Default;
+    use time::{self, Duration, Tm};
     use super::Algorithm::{HS256, RS512};
 
     #[test]
@@ -109,21 +112,50 @@ mod tests {
                    TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let token = DefaultToken::<()>::parse(raw).unwrap();
 
-        {
-            assert_eq!(token.header.alg, HS256);
-        }
+        assert_eq!(token.header.alg, HS256);
         assert!(token.verify("secret".as_bytes()).unwrap());
     }
 
     #[test]
     pub fn roundtrip_hmac() {
-        let token: DefaultToken<()> = Default::default();
+        let now = time::now();
+        let header: Header<()> = Default::default();
+        let payload = DefaultPayload {
+            nbf: Some(now.to_timespec().sec as u64),
+            exp: Some((now + Duration::minutes(5)).to_timespec().sec as u64),
+            ..Default::default()
+        };
+        let token = DefaultToken::new(header, payload);
         let key = "secret".as_bytes();
         let raw = token.sign(key).unwrap();
         let same = DefaultToken::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert!(same.verify(key).unwrap());
+    }
+
+    #[test]
+    pub fn roundtrip_expired() {
+        let now = time::now();
+        let token = create_for_range(now, now + Duration::minutes(-5));
+        let key = "secret".as_bytes();
+        let raw = token.sign(key).unwrap();
+        let same = DefaultToken::parse(&*raw).unwrap();
+
+        assert_eq!(token, same);
+        assert_eq!(false, same.verify(key).unwrap());
+    }
+
+    #[test]
+    pub fn roundtrip_not_yet_valid() {
+        let now = time::now();
+        let token = create_for_range(now + Duration::minutes(5), now + Duration::minutes(10));
+        let key = "secret".as_bytes();
+        let raw = token.sign(key).unwrap();
+        let same = DefaultToken::parse(&*raw).unwrap();
+
+        assert_eq!(token, same);
+        assert_eq!(false, same.verify(key).unwrap());
     }
 
     #[test]
@@ -137,5 +169,15 @@ mod tests {
         assert_eq!(token, same);
         let public_key = load_pem("./examples/publicKey.pub").unwrap();
         assert!(same.verify(public_key.as_bytes()).unwrap());
+    }
+
+    fn create_for_range(nbf: Tm, exp: Tm) -> DefaultToken<()> {
+        let header: Header<()> = Default::default();
+        let payload = DefaultPayload {
+            nbf: Some(nbf.to_timespec().sec as u64),
+            exp: Some(exp.to_timespec().sec as u64),
+            ..Default::default()
+        };
+        DefaultToken::new(header, payload)
     }
 }
