@@ -7,7 +7,7 @@ use std::default::Default;
 use super::error::Error;
 use super::Result;
 
-/// A extensible Header that provides only algorithm field and allows for additional fields to be
+/// An extensible Header that provides only algorithm field and allows for additional fields to be
 /// passed in via a struct that can be serialized and deserialized. Unlike the Claims struct, there
 /// is no convenience type alias because headers seem to vary much more greatly in practice
 /// depending on the application whereas claims seem to be shared as a function of registerest and
@@ -70,7 +70,7 @@ impl<T: Serialize + DeserializeOwned> Header<T> {
     }
 }
 
-impl<T: Serialize + DeserializeOwned> Default for Header<T> {
+impl<T> Default for Header<T> {
     fn default() -> Header<T> {
         Header {
             alg: Algorithm::HS256,

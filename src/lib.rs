@@ -32,7 +32,7 @@ pub type DefaultToken<H> = Token<H, ()>;
 #[derive(Debug, Default)]
 pub struct Token<H, C> {
     raw: Option<String>,
-    pub header: Header<H: Serialize + DeserializeOwned>,
+    pub header: Header<H>,
     pub payload: Payload<C>,
 }
 
