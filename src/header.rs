@@ -1,5 +1,6 @@
 use base64::{encode_config, decode_config, URL_SAFE_NO_PAD};
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::default::Default;
 
@@ -12,7 +13,7 @@ use super::Result;
 /// depending on the application whereas claims seem to be shared as a function of registerest and
 /// public claims.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct Header<T: Serialize + Deserialize> {
+pub struct Header<T> {
     pub alg: Algorithm,
     #[serde(skip_serializing)]
     pub headers: Option<T>,
@@ -29,7 +30,7 @@ pub enum Algorithm {
     RS512,
 }
 
-impl<T: Serialize + Deserialize> Header<T> {
+impl<T: Serialize + DeserializeOwned> Header<T> {
     pub fn from_base64(raw: &str) -> Result<Header<T>> {
         let data = decode_config(raw, URL_SAFE_NO_PAD)?;
         let own: Header<T> = serde_json::from_slice(&data)?;
@@ -69,7 +70,7 @@ impl<T: Serialize + Deserialize> Header<T> {
     }
 }
 
-impl<T: Serialize + Deserialize> Default for Header<T> {
+impl<T: Serialize + DeserializeOwned> Default for Header<T> {
     fn default() -> Header<T> {
         Header {
             alg: Algorithm::HS256,

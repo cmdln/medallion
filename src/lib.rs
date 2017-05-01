@@ -9,7 +9,8 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate time;
 
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 pub use error::Error;
 pub use header::Header;
 pub use header::Algorithm;
@@ -29,19 +30,16 @@ pub type DefaultToken<H> = Token<H, ()>;
 
 /// Main struct representing a JSON Web Token, composed of a header and a set of claims.
 #[derive(Debug, Default)]
-pub struct Token<H, C>
-    where H: Serialize + Deserialize + PartialEq,
-          C: Serialize + Deserialize + PartialEq
-{
+pub struct Token<H, C> {
     raw: Option<String>,
-    pub header: Header<H>,
+    pub header: Header<H: Serialize + DeserializeOwned>,
     pub payload: Payload<C>,
 }
 
 /// Provide the ability to parse a token, verify it and sign/serialize it.
 impl<H, C> Token<H, C>
-    where H: Serialize + Deserialize + PartialEq,
-          C: Serialize + Deserialize + PartialEq
+    where H: Serialize + DeserializeOwned,
+          C: Serialize + DeserializeOwned
 {
     pub fn new(header: Header<H>, payload: Payload<C>) -> Token<H, C> {
         Token {
@@ -89,8 +87,8 @@ impl<H, C> Token<H, C>
 }
 
 impl<H, C> PartialEq for Token<H, C>
-    where H: Serialize + Deserialize + PartialEq,
-          C: Serialize + Deserialize + PartialEq
+    where H: PartialEq,
+          C: PartialEq
 {
     fn eq(&self, other: &Token<H, C>) -> bool {
         self.header == other.header && self.payload == other.payload
