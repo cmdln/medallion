@@ -16,13 +16,18 @@ struct Custom {
 }
 
 fn new_token(user_id: &str, password: &str) -> Option<String> {
-    // Dummy auth
+    // dummy auth, in a real application using something like openidconnect, this would be some
+    // specific authentication scheme that takes place first then the JWT is generated as part of
+    // sucess and signed with the provider's private key so other services can validate trust for
+    // the claims in the token
     if password != "password" {
         return None;
     }
 
     let header: Header<()> = Default::default();
     let payload = Payload {
+        // custom claims will be application specific, they may come from open standards such as
+        // openidconnect where they may be referred to as registered claims
         claims: Some(Custom {
             user_id: user_id.into(),
             rhino: true,

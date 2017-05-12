@@ -31,6 +31,7 @@ pub enum Algorithm {
 }
 
 impl<T: Serialize + DeserializeOwned> Header<T> {
+    /// Decode from base64.
     pub fn from_base64(raw: &str) -> Result<Header<T>> {
         let data = decode_config(raw, URL_SAFE_NO_PAD)?;
         let own: Header<T> = serde_json::from_slice(&data)?;

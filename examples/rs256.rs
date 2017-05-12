@@ -1,24 +1,20 @@
 extern crate medallion;
+extern crate openssl;
 
 use std::default::Default;
-use std::fs::File;
-use std::io::{Error, Read};
+use openssl::rsa;
 use medallion::{Algorithm, Header, DefaultPayload, DefaultToken};
 
-fn load_pem(keypath: &str) -> Result<String, Error> {
-    let mut key_file = File::open(keypath)?;
-    let mut key = String::new();
-    key_file.read_to_string(&mut key)?;
-    Ok(key)
-}
-
-fn new_token(user_id: &str, password: &str) -> Option<String> {
-    // Dummy auth
+fn new_token(private_key: &[u8], user_id: &str, password: &str) -> Option<String> {
+    // dummy auth, in a real application using something like openidconnect, this would be some
+    // specific authentication scheme that takes place first then the JWT is generated as part of
+    // sucess and signed with the provider's private key so other services can validate trust for
+    // the claims in the token
     if password != "password" {
         return None;
     }
 
-    // can satisfy Header's generic parameter with an empty type
+    // can satisfy Header's type parameter with an empty tuple
     let header: Header<()> = Header { alg: Algorithm::RS256, ..Default::default() };
     let payload: DefaultPayload = DefaultPayload {
         iss: Some("example.com".into()),
@@ -27,15 +23,13 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
     };
     let token = DefaultToken::new(header, payload);
 
-    // this key was generated explicitly for these examples and is not used anywhere else
-    token.sign(load_pem("./privateKey.pem").unwrap().as_bytes()).ok()
+    token.sign(private_key).ok()
 }
 
-fn login(token: &str) -> Option<String> {
+fn login(public_key: &[u8], token: &str) -> Option<String> {
     let token: DefaultToken<()> = DefaultToken::parse(token).unwrap();
 
-    // this key was generated explicitly for these examples and is not used anywhere else
-    if token.verify(load_pem("./publicKey.pub").unwrap().as_bytes()).unwrap() {
+    if token.verify(public_key).unwrap() {
         token.payload.sub
     } else {
         None
@@ -43,9 +37,12 @@ fn login(token: &str) -> Option<String> {
 }
 
 fn main() {
-    let token = new_token("Random User", "password").unwrap();
+    // alternatively can read .pem files from fs or fetch from a server or...
+    let keypair = rsa::Rsa::generate(2048).unwrap();
 
-    let logged_in_user = login(&*token).unwrap();
+    let token = new_token(&keypair.private_key_to_pem().unwrap(), "Random User", "password").unwrap();
+
+    let logged_in_user = login(&keypair.public_key_to_pem().unwrap(), &*token).unwrap();
 
     assert_eq!(logged_in_user, "Random User");
 }

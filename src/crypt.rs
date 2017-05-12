@@ -73,8 +73,7 @@ fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) ->
 #[cfg(test)]
 pub mod tests {
     use header::Algorithm;
-    use std::io::{Error, Read};
-    use std::fs::File;
+    use openssl;
     use super::{sign, verify};
 
     #[test]
@@ -90,17 +89,17 @@ pub mod tests {
     }
 
     #[test]
-    pub fn sign_data_rsa() {
+    pub fn sign_and_verify_data_rsa() {
         let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
         let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
+
         let data = format!("{}.{}", header, claims);
 
-        let key = load_pem("./examples/privateKey.pem").unwrap();
+        let keypair = openssl::rsa::Rsa::generate(2048).unwrap();
 
-        let sig = sign(&*data, key.as_bytes(), &Algorithm::RS256);
+        let sig = sign(&*data, &keypair.private_key_to_pem().unwrap(), &Algorithm::RS256).unwrap();
 
-        assert_eq!(sig.unwrap(), real_sig);
+        assert!(verify(&sig, &*data, &keypair.public_key_to_pem().unwrap(), &Algorithm::RS256).unwrap());
     }
 
     #[test]
@@ -111,23 +110,5 @@ pub mod tests {
         let data = format!("{}.{}", header, claims);
 
         assert!(verify(target, &*data, "secret".as_bytes(), &Algorithm::HS256).unwrap());
-    }
-
-    #[test]
-    pub fn verify_data_rsa() {
-        let header = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
-        let claims = "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9";
-        let real_sig = "nXdpIkFQYZXZ0VlJjHmAc5_aewHCCJpT5jP1fpexUCF_9m3NxlC7uYNXAl6NKno520oh9wVT4VV_vmPeEin7BnnoIJNPcImWcUzkYpLTrDBntiF9HCuqFaniuEVzlf8dVlRJgo8QxhmUZEjyDFjPZXZxPlPV1LD6hrtItxMKZbh1qoNY3OL7Mwo-WuSRQ0mmKj-_y3weAmx_9EaTLY639uD8-o5iZxIIf85U4e55Wdp-C9FJ4RxyHpjgoG8p87IbChfleSdWcZL3NZuxjRCHVWgS1uYG0I-LqBWpWyXnJ1zk6-w4tfxOYpZFMOIyq4tY2mxJQ78Kvcu8bTO7UdI7iA";
-        let data = format!("{}.{}", header, claims);
-
-        let key = load_pem("./examples/publicKey.pub").unwrap();
-        assert!(verify(&real_sig, &*data, key.as_bytes(), &Algorithm::RS256).unwrap());
-    }
-
-    pub fn load_pem(keypath: &str) -> Result<String, Error> {
-        let mut key_file = File::open(keypath)?;
-        let mut key = String::new();
-        key_file.read_to_string(&mut key)?;
-        Ok(key)
     }
 }

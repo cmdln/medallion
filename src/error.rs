@@ -7,10 +7,15 @@ use openssl::error::ErrorStack;
 
 #[derive(Debug)]
 pub enum Error {
+    /// Custom, Medallion specific errors.
     Custom(String),
+    /// String encoding errors.
     Utf8(FromUtf8Error),
+    /// Base64 encoding or decoding errors.
     Base64(Base64Error),
+    /// JSON parsing or stringifying errors.
     JSON(serde_json::Error),
+    /// Errors from RSA operations.
     Crypto(ErrorStack),
 }
 

@@ -1,6 +1,11 @@
 #![crate_name = "medallion"]
 #![crate_type = "lib"]
 #![doc(html_root_url = "https://commandline.github.io/medallion/")]
+///! A crate for working with JSON WebTokens that use OpenSSL for RSA signing and encryption and
+///! serde and serde_json for JSON encoding and decoding.
+///!
+///! Tries to support the standard uses for JWTs while providing reasonable ways to extend,
+///! primarily by adding custom headers and claims to tokens.
 extern crate base64;
 extern crate openssl;
 extern crate serde;
@@ -23,8 +28,8 @@ mod crypt;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// A convenient type that bins the same type parameter for the custom claims, an empty tuple, as
-/// DefaultPayload so that the two aliases may be used together to reduce boilerplate when not
+/// A convenient type that binds the same type parameter for the custom claims, an empty tuple, as
+/// DefaultPayload so that the two aliases may be used together to reduce boilerplate when no
 /// custom claims are needed.
 pub type DefaultToken<H> = Token<H, ()>;
 
@@ -54,7 +59,7 @@ impl<H, C> Token<H, C>
         let pieces: Vec<_> = raw.split('.').collect();
 
         Ok(Token {
-            raw: Some(raw.into()),
+            raw: Some(raw.to_owned()),
             header: Header::from_base64(pieces[0])?,
             payload: Payload::from_base64(pieces[1])?,
         })
@@ -98,7 +103,7 @@ impl<H, C> PartialEq for Token<H, C>
 #[cfg(test)]
 mod tests {
     use {DefaultPayload, DefaultToken, Header};
-    use crypt::tests::load_pem;
+    use openssl;
     use std::default::Default;
     use time::{self, Duration, Tm};
     use super::Algorithm::{HS256, RS512};
@@ -158,15 +163,14 @@ mod tests {
 
     #[test]
     pub fn roundtrip_rsa() {
+        let rsa_keypair = openssl::rsa::Rsa::generate(2048).unwrap();
         let header: Header<()> = Header { alg: RS512, ..Default::default() };
         let token = DefaultToken { header: header, ..Default::default() };
-        let private_key = load_pem("./examples/privateKey.pem").unwrap();
-        let raw = token.sign(private_key.as_bytes()).unwrap();
+        let raw = token.sign(&rsa_keypair.private_key_to_pem().unwrap()).unwrap();
         let same = DefaultToken::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
-        let public_key = load_pem("./examples/publicKey.pub").unwrap();
-        assert!(same.verify(public_key.as_bytes()).unwrap());
+        assert!(same.verify(&rsa_keypair.public_key_to_pem().unwrap()).unwrap());
     }
 
     fn create_for_range(nbf: Tm, exp: Tm) -> DefaultToken<()> {

@@ -4,7 +4,10 @@ use std::default::Default;
 use medallion::{Header, DefaultPayload, DefaultToken};
 
 fn new_token(user_id: &str, password: &str) -> Option<String> {
-    // Dummy auth
+    // dummy auth, in a real application using something like openidconnect, this would be some
+    // specific authentication scheme that takes place first then the JWT is generated as part of
+    // sucess and signed with the provider's private key so other services can validate trust for
+    // the claims in the token
     if password != "password" {
         return None;
     }
@@ -24,6 +27,7 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
 fn login(token: &str) -> Option<String> {
     let token: DefaultToken<()> = DefaultToken::parse(token).unwrap();
 
+    // the key for HMAC is some secret known to trusted/trusting parties
     if token.verify(b"secret_key").unwrap() {
         token.payload.sub
     } else {
