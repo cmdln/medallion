@@ -4,8 +4,8 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::default::Default;
 
-use super::error::Error;
-use super::Result;
+use error::Error;
+use Result;
 
 /// An extensible Header that provides only algorithm field and allows for additional fields to be
 /// passed in via a struct that can be serialized and deserialized. Unlike the Claims struct, there

@@ -1,11 +1,10 @@
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use header::Algorithm;
 use openssl::hash::MessageDigest;
 use openssl::memcmp;
 use openssl::pkey::PKey;
 use openssl::rsa::Rsa;
 use openssl::sign::{Signer, Verifier};
-use super::Result;
+use {Result, Algorithm};
 
 pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> Result<String> {
     match algorithm {
@@ -72,7 +71,7 @@ fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) ->
 
 #[cfg(test)]
 pub mod tests {
-    use header::Algorithm;
+    use Algorithm;
     use openssl;
     use super::{sign, verify};
 

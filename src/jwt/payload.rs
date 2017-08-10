@@ -29,10 +29,6 @@ pub struct Payload<T> {
     pub claims: Option<T>,
 }
 
-/// A convenient type alias that assumes the standard claims are sufficient, the empty tuple type
-/// satisfies Claims' generic parameter as simply and clearly as possible.
-pub type DefaultPayload = Payload<()>;
-
 impl<T: Serialize + DeserializeOwned> Payload<T> {
     /// This implementation simply parses the base64 data twice, first parsing out the standard
     /// claims then any custom claims, assigning the latter into a copy of the former before
@@ -101,7 +97,7 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
 mod tests {
     use std::default::Default;
     use time::{self, Duration};
-    use super::{Payload, DefaultPayload};
+    use {Payload, DefaultPayload};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct CustomClaims {
