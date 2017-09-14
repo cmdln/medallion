@@ -17,7 +17,7 @@ extern crate time;
 pub use error::Error;
 pub use jwt::{Token, Header, Algorithm, Payload};
 use jwk::Key;
-pub use jwk::{KeySet, KeyType, OctetSequenceParams, RsaPrivateParams, RsaPublicParams};
+pub use jwk::{KeySet, KeyType, OctetSequenceParams, RsaParams};
 
 pub mod error;
 mod jwk;
@@ -25,11 +25,8 @@ mod jwt;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// JWK for an RSA private key.
-pub type RsaPrivateKey = Key<RsaPrivateParams>;
-
 /// JWK for an RSA public key.
-pub type RsaPublicKey = Key<RsaPublicParams>;
+pub type RsaPublicKey = Key<RsaParams>;
 
 /// JWK for a byte sequence based key.
 pub type OctetSequenceKey = Key<OctetSequenceParams>;

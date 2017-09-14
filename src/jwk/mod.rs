@@ -8,8 +8,7 @@ use Result;
 mod rsa;
 mod octet;
 
-pub use self::rsa::RsaPrivateParams;
-pub use self::rsa::RsaPublicParams;
+pub use self::rsa::RsaParams;
 pub use self::octet::OctetSequenceParams;
 
 
@@ -122,15 +121,14 @@ impl<T: Serialize> Serialize for Key<T> {
 #[cfg(test)]
 mod tests {
     use openssl::rsa::Rsa;
-    use {Algorithm, KeySet, KeyType, OctetSequenceKey, OctetSequenceParams, RsaPrivateKey,
-         RsaPrivateParams, RsaPublicKey, RsaPublicParams};
+    use {Algorithm, KeySet, KeyType, OctetSequenceKey, OctetSequenceParams, RsaPublicKey, RsaParams};
 
     #[test]
     pub fn rsa_private_key() {
         let rsa_keypair = Rsa::generate(2048).unwrap();
-        let params = RsaPrivateParams::from_pem(&rsa_keypair.private_key_to_pem().unwrap())
+        let params = RsaParams::from_private_key_pem(&rsa_keypair.private_key_to_pem().unwrap())
             .unwrap();
-        let key = RsaPrivateKey {
+        let key = RsaPublicKey {
             kty: KeyType::RSA,
             kid: "foo".to_owned(),
             params: Some(params),
@@ -138,14 +136,14 @@ mod tests {
 
         let json = key.to_string().unwrap();
         println!("{}", json);
-        let recovered = RsaPrivateKey::from_string(&json).unwrap();
+        let recovered = RsaPublicKey::from_string(&json).unwrap();
         assert_eq!(key, recovered);
     }
 
     #[test]
     pub fn rsa_public_key() {
         let rsa_keypair = Rsa::generate(2048).unwrap();
-        let params = RsaPublicParams::from_pem(&rsa_keypair.public_key_to_pem().unwrap()).unwrap();
+        let params = RsaParams::from_public_key_pem(&rsa_keypair.public_key_to_pem().unwrap()).unwrap();
         let key = RsaPublicKey {
             kty: KeyType::RSA,
             kid: "bar".to_owned(),
@@ -180,7 +178,7 @@ mod tests {
         };
 
         let rsa_keypair = Rsa::generate(2048).unwrap();
-        let params = RsaPublicParams::from_pem(&rsa_keypair.public_key_to_pem().unwrap()).unwrap();
+        let params = RsaParams::from_public_key_pem(&rsa_keypair.public_key_to_pem().unwrap()).unwrap();
         let key2 = RsaPublicKey {
             kty: KeyType::RSA,
             kid: "bar".to_owned(),
@@ -198,7 +196,7 @@ mod tests {
             params: Some(OctetSequenceParams::from_slice(Algorithm::HS512, b"super secret key")),
         };
 
-        let params = RsaPublicParams::from_pem(&rsa_keypair.public_key_to_pem().unwrap()).unwrap();
+        let params = RsaParams::from_public_key_pem(&rsa_keypair.public_key_to_pem().unwrap()).unwrap();
         let key2 = RsaPublicKey {
             kty: KeyType::RSA,
             kid: "bar".to_owned(),
@@ -207,7 +205,7 @@ mod tests {
 
         let mut recovered = KeySet::from_string(&key_set.to_string().unwrap()).unwrap();
 
-        assert_eq!(key2, recovered.pop::<RsaPublicParams>().unwrap());
+        assert_eq!(key2, recovered.pop::<RsaParams>().unwrap());
         assert_eq!(key1, recovered.pop::<OctetSequenceParams>().unwrap());
     }
 }

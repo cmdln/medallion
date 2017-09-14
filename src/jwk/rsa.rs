@@ -1,82 +1,107 @@
 use base64::{encode_config, decode_config, URL_SAFE_NO_PAD};
 use openssl::bn::{BigNum, BigNumRef};
 use openssl::rsa::Rsa;
-use Result;
+
+use {error, Result};
 
 /// Parameters included in an RSA private key.
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct RsaPublicParams {
+pub struct RsaParams {
     pub n: String,
     pub e: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub d: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub p: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub q: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dp: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dq: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qi: Option<String>,
 }
 
 /// Convenience methods for consuming and producing usable RSA objects from the parameters.
-impl RsaPublicParams {
-    pub fn from_pem(pem: &[u8]) -> Result<RsaPublicParams> {
+impl RsaParams {
+    pub fn from_public_key_pem(pem: &[u8]) -> Result<RsaParams> {
         let key_pair = Rsa::public_key_from_pem(pem)?;
-        let n = key_pair.n().unwrap();
-        let e = key_pair.e().unwrap();
-        Ok(RsaPublicParams {
-            n: encode_param(n),
-            e: encode_param(e),
-        })
+        Self::from_rsa(key_pair)
     }
 
-    pub fn to_pem(&self) -> Result<Vec<u8>> {
-        let key_pair = Rsa::from_public_components(recover_param(&self.n)?,
-                                                   recover_param(&self.e)?)?;
+    pub fn from_private_key_pem(pem: &[u8]) -> Result<RsaParams> {
+        let key_pair = Rsa::private_key_from_pem(pem)?;
+        Self::from_rsa(key_pair)
+    }
+
+    pub fn from_rsa(rsa: Rsa) -> Result<RsaParams> {
+        if let (Some(n), Some(e)) = (rsa.n(), rsa.e()) {
+            if let (Some(d), Some(p), Some(q)) = (rsa.d(), rsa.p(), rsa.q()) {
+                let one = BigNum::from_u32(1).unwrap();
+                let dp = d % &(p - &one);
+                let dq = q % &(q - &one);
+                let qi = &(q - &one) % p;
+                Ok(RsaParams {
+                    n: encode_param(n),
+                    e: encode_param(e),
+                    d: Some(encode_param(d)),
+                    p: Some(encode_param(p)),
+                    q: Some(encode_param(q)),
+                    dp: Some(encode_param(&dp)),
+                    dq: Some(encode_param(&dq)),
+                    qi: Some(encode_param(&qi)),
+                })
+            } else {
+                Ok(RsaParams {
+                    n: encode_param(n),
+                    e: encode_param(e),
+                    ..Default::default()
+                })
+            }
+        } else {
+            return Err(error::Error::Custom(String::from("Missing n or e parameter of public \
+                                                          key!")));
+        }
+    }
+
+    pub fn to_public_key_pem(&self) -> Result<Vec<u8>> {
+        let key_pair = self.to_rsa()?;
         Ok(key_pair.public_key_to_pem()?)
     }
-}
 
-/// Parameters included in an RSA private key.
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct RsaPrivateParams {
-    pub n: String,
-    pub e: String,
-    pub d: String,
-    pub p: String,
-    pub q: String,
-    pub dp: String,
-    pub dq: String,
-    pub qi: String,
-}
-
-/// Convenience methods for consuming and producing usable RSA objects from the parameters.
-impl RsaPrivateParams {
-    pub fn from_pem(pem: &[u8]) -> Result<RsaPrivateParams> {
-        let key_pair = Rsa::private_key_from_pem(pem)?;
-        let n = key_pair.n().unwrap();
-        let e = key_pair.e().unwrap();
-        let d = key_pair.d().unwrap();
-        let p = key_pair.p().unwrap();
-        let q = key_pair.q().unwrap();
-        let one = BigNum::from_u32(1).unwrap();
-        let dp = d % &(p - &one);
-        let dq = q % &(q - &one);
-        let qi = &(q - &one) % p;
-        Ok(RsaPrivateParams {
-            n: encode_param(n),
-            e: encode_param(e),
-            d: encode_param(d),
-            p: encode_param(p),
-            q: encode_param(q),
-            dp: encode_param(&dp),
-            dq: encode_param(&dq),
-            qi: encode_param(&qi),
-        })
+    pub fn to_private_key_pem(&self) -> Result<Vec<u8>> {
+        let key_pair = self.to_rsa()?;
+        Ok(key_pair.private_key_to_pem()?)
     }
 
-    pub fn to_pem(&self) -> Result<Vec<u8>> {
-        let key_pair = Rsa::from_private_components(recover_param(&self.n)?,
-                                                    recover_param(&self.e)?,
-                                                    recover_param(&self.d)?,
-                                                    recover_param(&self.p)?,
-                                                    recover_param(&self.q)?,
-                                                    recover_param(&self.dp)?,
-                                                    recover_param(&self.dq)?,
-                                                    recover_param(&self.qi)?)?;
-        Ok(key_pair.private_key_to_pem()?)
+    pub fn to_rsa(&self) -> Result<Rsa> {
+        if self.is_private_key() {
+            Ok(Rsa::from_private_components(recover_param(&self.n)?,
+                                            recover_param(&self.e)?,
+                                            recover_optional_param(&self.d)?,
+                                            recover_optional_param(&self.p)?,
+                                            recover_optional_param(&self.q)?,
+                                            recover_optional_param(&self.dp)?,
+                                            recover_optional_param(&self.dq)?,
+                                            recover_optional_param(&self.qi)?)?)
+        } else {
+            Ok(Rsa::from_public_components(recover_param(&self.n)?, recover_param(&self.e)?)?)
+        }
+    }
+
+    pub fn is_private_key(&self) -> bool {
+        [&self.d, &self.p, &self.q, &self.dp, &self.dq, &self.qi]
+            .iter()
+            .all(|param| param.is_some())
+    }
+}
+
+fn recover_optional_param(param: &Option<String>) -> Result<BigNum> {
+    if let Some(ref param) = *param {
+        Ok(BigNum::from_slice(&decode_config(param, URL_SAFE_NO_PAD)?)?)
+    } else {
+        return Err(error::Error::Custom(String::from("Missing parameter!")));
     }
 }
 
@@ -94,14 +119,15 @@ mod tests {
     use openssl::pkey::PKey;
     use openssl::rsa::Rsa;
     use openssl::sign::{Signer, Verifier};
-    use super::{RsaPrivateParams, RsaPublicParams};
+    use super::RsaParams;
 
     #[test]
     pub fn priv_params() {
         let rsa_keypair = Rsa::generate(2048).unwrap();
-        let priv_params = RsaPrivateParams::from_pem(&rsa_keypair.private_key_to_pem().unwrap())
-            .unwrap();
-        let recovered = Rsa::private_key_from_pem(&priv_params.to_pem().unwrap()).unwrap();
+        let priv_params =
+            RsaParams::from_private_key_pem(&rsa_keypair.private_key_to_pem().unwrap()).unwrap();
+        assert!(priv_params.is_private_key());
+        let recovered = priv_params.to_rsa().unwrap();
         assert_eq!(rsa_keypair.n().unwrap(), recovered.n().unwrap());
         assert_eq!(rsa_keypair.e().unwrap(), recovered.e().unwrap());
         assert_eq!(rsa_keypair.d().unwrap(), recovered.d().unwrap());
@@ -114,7 +140,7 @@ mod tests {
         let data = b"Hello";
         let data2 = b"Good bye";
         let rsa_keypair = Rsa::generate(2048).unwrap();
-        let pub_params = RsaPublicParams::from_pem(&rsa_keypair.public_key_to_pem().unwrap())
+        let pub_params = RsaParams::from_public_key_pem(&rsa_keypair.public_key_to_pem().unwrap())
             .unwrap();
         let pkey = PKey::from_rsa(rsa_keypair).unwrap();
         let mut signer = Signer::new(MessageDigest::sha256(), &pkey).unwrap();
@@ -122,7 +148,7 @@ mod tests {
         signer.update(data2).unwrap();
         let signature = signer.finish().unwrap();
 
-        let recovered = Rsa::public_key_from_pem(&pub_params.to_pem().unwrap()).unwrap();
+        let recovered = pub_params.to_rsa().unwrap();
         let keypair = PKey::from_rsa(recovered).unwrap();
         let mut verifier = Verifier::new(MessageDigest::sha256(), &keypair).unwrap();
         verifier.update(data).unwrap();
