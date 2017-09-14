@@ -150,7 +150,8 @@ mod tests {
     fn roundtrip_custom() {
         let payload = create_custom();
         let enc = payload.to_base64().unwrap();
-        assert_eq!(payload, Payload::<CustomClaims>::from_base64(&*enc).unwrap());
+        assert_eq!(payload,
+                   Payload::<CustomClaims>::from_base64(&*enc).unwrap());
     }
 
     #[test]
@@ -195,18 +196,12 @@ mod tests {
 
     fn create_with_nbf(offset: i64) -> DefaultPayload {
         let nbf = (time::now() - Duration::minutes(offset)).to_timespec().sec;
-        DefaultPayload {
-            nbf: Some(nbf as u64),
-            ..Default::default()
-        }
+        DefaultPayload { nbf: Some(nbf as u64), ..Default::default() }
     }
 
     fn create_with_exp(offset: i64) -> DefaultPayload {
         let exp = (time::now() + Duration::minutes(offset)).to_timespec().sec;
-        DefaultPayload {
-            exp: Some(exp as u64),
-            ..Default::default()
-        }
+        DefaultPayload { exp: Some(exp as u64), ..Default::default() }
     }
 
     fn create_with_nbf_exp(nbf_offset: i64, exp_offset: i64) -> DefaultPayload {

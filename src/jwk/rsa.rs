@@ -17,9 +17,9 @@ impl RsaPublicParams {
         let n = key_pair.n().unwrap();
         let e = key_pair.e().unwrap();
         Ok(RsaPublicParams {
-               n: encode_param(n),
-               e: encode_param(e),
-           })
+            n: encode_param(n),
+            e: encode_param(e),
+        })
     }
 
     pub fn to_pem(&self) -> Result<Vec<u8>> {
@@ -56,15 +56,15 @@ impl RsaPrivateParams {
         let dq = q % &(q - &one);
         let qi = &(q - &one) % p;
         Ok(RsaPrivateParams {
-               n: encode_param(n),
-               e: encode_param(e),
-               d: encode_param(d),
-               p: encode_param(p),
-               q: encode_param(q),
-               dp: encode_param(&dp),
-               dq: encode_param(&dq),
-               qi: encode_param(&qi),
-           })
+            n: encode_param(n),
+            e: encode_param(e),
+            d: encode_param(d),
+            p: encode_param(p),
+            q: encode_param(q),
+            dp: encode_param(&dp),
+            dq: encode_param(&dq),
+            qi: encode_param(&qi),
+        })
     }
 
     pub fn to_pem(&self) -> Result<Vec<u8>> {

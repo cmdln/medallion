@@ -17,7 +17,7 @@ impl OctetSequenceParams {
     }
 
     pub fn as_slice(&self) -> Result<Vec<u8>> {
-        if let Some(ref key) = self.k.as_ref() {
+        if let Some(key) = self.k.as_ref() {
             Ok(decode_config(&key, URL_SAFE_NO_PAD)?)
         } else {
             Err(Error::Custom("Key parameter is None!".to_owned()))

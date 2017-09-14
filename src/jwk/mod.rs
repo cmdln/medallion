@@ -22,14 +22,14 @@ pub enum KeyType {
     OCT,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeySet {
     keys: Vec<Value>,
 }
 
 impl KeySet {
     pub fn new() -> KeySet {
-        KeySet { keys: vec![] }
+        KeySet { ..Default::default() }
     }
 
     pub fn push<T>(&mut self, key: Key<T>)
@@ -48,10 +48,10 @@ impl KeySet {
         let params: Option<T> = serde_json::from_value(value)?;
 
         Ok(Key {
-               kty: key.kty,
-               kid: key.kid,
-               params: params,
-           })
+            kty: key.kty,
+            kid: key.kid,
+            params: params,
+        })
     }
 
     // TODO store map of kid to key
@@ -84,15 +84,15 @@ impl<T: Serialize + DeserializeOwned> Key<T> {
     // TODO implement custom serde de-serializer
     // TODO deprecate in favor of serde
     pub fn from_string(raw: &str) -> Result<Self> {
-        let key: Key<T> = serde_json::from_str(&raw)?;
+        let key: Key<T> = serde_json::from_str(raw)?;
 
-        let params: Option<T> = serde_json::from_str(&raw)?;
+        let params: Option<T> = serde_json::from_str(raw)?;
 
         Ok(Key {
-               kty: key.kty,
-               kid: key.kid,
-               params: params,
-           })
+            kty: key.kty,
+            kid: key.kid,
+            params: params,
+        })
     }
 }
 

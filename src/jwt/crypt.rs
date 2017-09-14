@@ -7,24 +7,24 @@ use openssl::sign::{Signer, Verifier};
 use {Result, Algorithm};
 
 pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> Result<String> {
-    match algorithm {
-        &Algorithm::HS256 => sign_hmac(data, key, MessageDigest::sha256()),
-        &Algorithm::HS384 => sign_hmac(data, key, MessageDigest::sha384()),
-        &Algorithm::HS512 => sign_hmac(data, key, MessageDigest::sha512()),
-        &Algorithm::RS256 => sign_rsa(data, key, MessageDigest::sha256()),
-        &Algorithm::RS384 => sign_rsa(data, key, MessageDigest::sha384()),
-        &Algorithm::RS512 => sign_rsa(data, key, MessageDigest::sha512()),
+    match *algorithm {
+        Algorithm::HS256 => sign_hmac(data, key, MessageDigest::sha256()),
+        Algorithm::HS384 => sign_hmac(data, key, MessageDigest::sha384()),
+        Algorithm::HS512 => sign_hmac(data, key, MessageDigest::sha512()),
+        Algorithm::RS256 => sign_rsa(data, key, MessageDigest::sha256()),
+        Algorithm::RS384 => sign_rsa(data, key, MessageDigest::sha384()),
+        Algorithm::RS512 => sign_rsa(data, key, MessageDigest::sha512()),
     }
 }
 
 pub fn verify(target: &str, data: &str, key: &[u8], algorithm: &Algorithm) -> Result<bool> {
-    match algorithm {
-        &Algorithm::HS256 => verify_hmac(target, data, key, MessageDigest::sha256()),
-        &Algorithm::HS384 => verify_hmac(target, data, key, MessageDigest::sha384()),
-        &Algorithm::HS512 => verify_hmac(target, data, key, MessageDigest::sha512()),
-        &Algorithm::RS256 => verify_rsa(target, data, key, MessageDigest::sha256()),
-        &Algorithm::RS384 => verify_rsa(target, data, key, MessageDigest::sha384()),
-        &Algorithm::RS512 => verify_rsa(target, data, key, MessageDigest::sha512()),
+    match *algorithm {
+        Algorithm::HS256 => verify_hmac(target, data, key, MessageDigest::sha256()),
+        Algorithm::HS384 => verify_hmac(target, data, key, MessageDigest::sha384()),
+        Algorithm::HS512 => verify_hmac(target, data, key, MessageDigest::sha512()),
+        Algorithm::RS256 => verify_rsa(target, data, key, MessageDigest::sha256()),
+        Algorithm::RS384 => verify_rsa(target, data, key, MessageDigest::sha384()),
+        Algorithm::RS512 => verify_rsa(target, data, key, MessageDigest::sha512()),
     }
 }
 
@@ -96,9 +96,16 @@ pub mod tests {
 
         let keypair = openssl::rsa::Rsa::generate(2048).unwrap();
 
-        let sig = sign(&*data, &keypair.private_key_to_pem().unwrap(), &Algorithm::RS256).unwrap();
+        let sig = sign(&*data,
+                       &keypair.private_key_to_pem().unwrap(),
+                       &Algorithm::RS256)
+            .unwrap();
 
-        assert!(verify(&sig, &*data, &keypair.public_key_to_pem().unwrap(), &Algorithm::RS256).unwrap());
+        assert!(verify(&sig,
+                       &*data,
+                       &keypair.public_key_to_pem().unwrap(),
+                       &Algorithm::RS256)
+            .unwrap());
     }
 
     #[test]
