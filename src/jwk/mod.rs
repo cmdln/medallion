@@ -2,7 +2,10 @@ use serde::{Serialize, Serializer};
 use serde::de::DeserializeOwned;
 use serde::ser::{self, SerializeMap};
 use serde_json::{self, Value};
+
 use std;
+use std::slice::Iter;
+
 use Result;
 
 mod rsa;
@@ -53,9 +56,16 @@ impl KeySet {
         })
     }
 
-    // TODO store map of kid to key
-    // TODO replace pop with get by kid
-    // TODO expose iterator over kid
+    pub fn iter_kty<T>(&self, kty: KeyType) -> Result<Iter<Key<T>>> where T: IntoKey + DeserializeOwned {
+        let kty_only: Vec<Key<T>> = self.keys.clone().iter().filter(|value| {
+            T::is_kty(value)
+        })
+        .map(|ref value| {
+            serde_json::from_value(*value.clone()).unwrap()
+        })
+        .collect();
+        Ok(kty_only.iter())
+    }
 
     pub fn to_string(&self) -> Result<String> {
         Ok(serde_json::to_string(&self)?)
@@ -72,6 +82,10 @@ pub struct Key<T> {
     pub kty: KeyType,
     pub kid: String,
     pub params: Option<T>,
+}
+
+pub trait IntoKey {
+    fn is_kty(value: &Value) -> bool;
 }
 
 impl<T: Serialize + DeserializeOwned> Key<T> {
@@ -205,7 +219,8 @@ mod tests {
 
         let mut recovered = KeySet::from_string(&key_set.to_string().unwrap()).unwrap();
 
-        assert_eq!(key2, recovered.pop::<RsaParams>().unwrap());
+        //assert_eq!(key2, recovered.pop::<RsaParams>().unwrap());
+        assert_eq!(key1, recovered.pop::<OctetSequenceParams>().unwrap());
         assert_eq!(key1, recovered.pop::<OctetSequenceParams>().unwrap());
     }
 }
