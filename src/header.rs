@@ -1,4 +1,4 @@
-use base64::{encode_config, decode_config, URL_SAFE_NO_PAD};
+use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
@@ -38,10 +38,9 @@ impl<T: Serialize + DeserializeOwned> Header<T> {
 
         let headers: Option<T> = serde_json::from_slice(&data).ok();
 
-
         Ok(Header {
             alg: own.alg,
-            headers: headers,
+            headers,
         })
     }
 
@@ -56,7 +55,9 @@ impl<T: Serialize + DeserializeOwned> Header<T> {
                         let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
                         Ok(enc)
                     } else {
-                        Err(Error::Custom("Could not access additional headers.".to_owned()))
+                        Err(Error::Custom(
+                            "Could not access additional headers.".to_owned(),
+                        ))
                     }
                 }
                 None => {

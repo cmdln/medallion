@@ -1,8 +1,8 @@
 #![crate_name = "medallion"]
 #![crate_type = "lib"]
 #![doc(html_root_url = "https://commandline.github.io/medallion/")]
-///! A crate for working with JSON WebTokens that use OpenSSL for RSA signing and encryption and
-///! serde and serde_json for JSON encoding and decoding.
+///! A crate for working with JSON `WebTokens` that use OpenSSL for RSA signing and encryption and
+///! `serde` and `serde_json` for JSON encoding and decoding.
 ///!
 ///! Tries to support the standard uses for JWTs while providing reasonable ways to extend,
 ///! primarily by adding custom headers and claims to tokens.
@@ -19,7 +19,7 @@ use serde::de::DeserializeOwned;
 pub use error::Error;
 pub use header::Header;
 pub use header::Algorithm;
-pub use payload::{Payload, DefaultPayload};
+pub use payload::{DefaultPayload, Payload};
 
 pub mod error;
 mod header;
@@ -29,7 +29,7 @@ mod crypt;
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// A convenient type that binds the same type parameter for the custom claims, an empty tuple, as
-/// DefaultPayload so that the two aliases may be used together to reduce boilerplate when no
+/// `DefaultPayload` so that the two aliases may be used together to reduce boilerplate when no
 /// custom claims are needed.
 pub type DefaultToken<H> = Token<H, ()>;
 
@@ -43,14 +43,15 @@ pub struct Token<H, C> {
 
 /// Provide the ability to parse a token, verify it and sign/serialize it.
 impl<H, C> Token<H, C>
-    where H: Serialize + DeserializeOwned,
-          C: Serialize + DeserializeOwned
+where
+    H: Serialize + DeserializeOwned,
+    C: Serialize + DeserializeOwned,
 {
     pub fn new(header: Header<H>, payload: Payload<C>) -> Token<H, C> {
         Token {
             raw: None,
-            header: header,
-            payload: payload,
+            header,
+            payload,
         }
     }
 
@@ -92,8 +93,9 @@ impl<H, C> Token<H, C>
 }
 
 impl<H, C> PartialEq for Token<H, C>
-    where H: PartialEq,
-          C: PartialEq
+where
+    H: PartialEq,
+    C: PartialEq,
 {
     fn eq(&self, other: &Token<H, C>) -> bool {
         self.header == other.header && self.payload == other.payload
@@ -164,13 +166,24 @@ mod tests {
     #[test]
     pub fn roundtrip_rsa() {
         let rsa_keypair = openssl::rsa::Rsa::generate(2048).unwrap();
-        let header: Header<()> = Header { alg: RS512, ..Default::default() };
-        let token = DefaultToken { header: header, ..Default::default() };
-        let raw = token.sign(&rsa_keypair.private_key_to_pem().unwrap()).unwrap();
+        let header: Header<()> = Header {
+            alg: RS512,
+            ..Default::default()
+        };
+        let token = DefaultToken {
+            header: header,
+            ..Default::default()
+        };
+        let raw = token
+            .sign(&rsa_keypair.private_key_to_pem().unwrap())
+            .unwrap();
         let same = DefaultToken::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
-        assert!(same.verify(&rsa_keypair.public_key_to_pem().unwrap()).unwrap());
+        assert!(
+            same.verify(&rsa_keypair.public_key_to_pem().unwrap())
+                .unwrap()
+        );
     }
 
     fn create_for_range(nbf: Tm, exp: Tm) -> DefaultToken<()> {

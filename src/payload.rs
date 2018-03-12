@@ -78,9 +78,10 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
                 }
             }
         } else {
-            Err(Error::Custom("Could not access standard claims.".to_owned()))
+            Err(Error::Custom(
+                "Could not access standard claims.".to_owned(),
+            ))
         }
-
     }
 
     pub fn verify(&self) -> bool {
@@ -101,7 +102,7 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
 mod tests {
     use std::default::Default;
     use time::{self, Duration};
-    use super::{Payload, DefaultPayload};
+    use super::{DefaultPayload, Payload};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct CustomClaims {
@@ -154,7 +155,10 @@ mod tests {
     fn roundtrip_custom() {
         let payload = create_custom();
         let enc = payload.to_base64().unwrap();
-        assert_eq!(payload, Payload::<CustomClaims>::from_base64(&*enc).unwrap());
+        assert_eq!(
+            payload,
+            Payload::<CustomClaims>::from_base64(&*enc).unwrap()
+        );
     }
 
     #[test]
@@ -214,8 +218,12 @@ mod tests {
     }
 
     fn create_with_nbf_exp(nbf_offset: i64, exp_offset: i64) -> DefaultPayload {
-        let nbf = (time::now() - Duration::minutes(nbf_offset)).to_timespec().sec;
-        let exp = (time::now() + Duration::minutes(exp_offset)).to_timespec().sec;
+        let nbf = (time::now() - Duration::minutes(nbf_offset))
+            .to_timespec()
+            .sec;
+        let exp = (time::now() + Duration::minutes(exp_offset))
+            .to_timespec()
+            .sec;
         DefaultPayload {
             nbf: Some(nbf as u64),
             exp: Some(exp as u64),

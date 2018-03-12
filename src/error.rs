@@ -22,7 +22,7 @@ pub enum Error {
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
-            Error::Custom(ref message) => &message,
+            Error::Custom(ref message) => message,
             Error::Utf8(ref err) => err.description(),
             Error::Base64(ref err) => err.description(),
             Error::JSON(ref err) => err.description(),
@@ -44,7 +44,7 @@ impl error::Error for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::Custom(ref message) => f.write_str(&message),
+            Error::Custom(ref message) => f.write_str(message),
             Error::Utf8(ref err) => err.fmt(f),
             Error::Base64(ref err) => err.fmt(f),
             Error::JSON(ref err) => err.fmt(f),
