@@ -1,4 +1,4 @@
-use base64::Base64Error;
+use base64::DecodeError;
 use serde_json;
 use std::error;
 use std::fmt;
@@ -12,7 +12,7 @@ pub enum Error {
     /// String encoding errors.
     Utf8(FromUtf8Error),
     /// Base64 encoding or decoding errors.
-    Base64(Base64Error),
+    Base64(DecodeError),
     /// JSON parsing or stringifying errors.
     JSON(serde_json::Error),
     /// Errors from RSA operations.
@@ -62,6 +62,6 @@ macro_rules! error_wrap {
 }
 
 error_wrap!(FromUtf8Error, Error::Utf8);
-error_wrap!(Base64Error, Error::Base64);
+error_wrap!(DecodeError, Error::Base64);
 error_wrap!(serde_json::Error, Error::JSON);
 error_wrap!(ErrorStack, Error::Crypto);

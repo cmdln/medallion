@@ -35,7 +35,7 @@ fn sign_hmac(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
     let mut signer = Signer::new(digest, &secret_key)?;
     signer.update(data.as_bytes())?;
 
-    let mac = signer.finish()?;
+    let mac = signer.sign_to_vec()?;
     Ok(encode_config(&mac, URL_SAFE_NO_PAD))
 }
 
@@ -45,7 +45,7 @@ fn sign_rsa(data: &str, key: &[u8], digest: MessageDigest) -> Result<String> {
 
     let mut signer = Signer::new(digest, &pkey)?;
     signer.update(data.as_bytes())?;
-    let sig = signer.finish()?;
+    let sig = signer.sign_to_vec()?;
     Ok(encode_config(&sig, URL_SAFE_NO_PAD))
 }
 
@@ -56,7 +56,7 @@ fn verify_hmac(target: &str, data: &str, key: &[u8], digest: MessageDigest) -> R
     let mut signer = Signer::new(digest, &secret_key)?;
     signer.update(data.as_bytes())?;
 
-    let mac = signer.finish()?;
+    let mac = signer.sign_to_vec()?;
 
     Ok(memcmp::eq(&mac, &target_bytes))
 }
@@ -67,7 +67,7 @@ fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) ->
     let pkey = PKey::from_rsa(public_key)?;
     let mut verifier = Verifier::new(digest, &pkey)?;
     verifier.update(data.as_bytes())?;
-    Ok(verifier.finish(&signature_bytes)?)
+    Ok(verifier.verify(&signature_bytes)?)
 }
 
 #[cfg(test)]
@@ -97,9 +97,20 @@ pub mod tests {
 
         let keypair = openssl::rsa::Rsa::generate(2048).unwrap();
 
-        let sig = sign(&*data, &keypair.private_key_to_pem().unwrap(), &Algorithm::RS256).unwrap();
+        let sig = sign(
+            &*data,
+            &keypair.private_key_to_pem().unwrap(),
+            &Algorithm::RS256,
+        ).unwrap();
 
-        assert!(verify(&sig, &*data, &keypair.public_key_to_pem().unwrap(), &Algorithm::RS256).unwrap());
+        assert!(
+            verify(
+                &sig,
+                &*data,
+                &keypair.public_key_to_pem().unwrap(),
+                &Algorithm::RS256
+            ).unwrap()
+        );
     }
 
     #[test]
