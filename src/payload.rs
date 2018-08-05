@@ -1,16 +1,16 @@
+use super::Result;
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use error::Error;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json;
 use serde_json::value::Value;
-use super::Result;
 use time::{self, Timespec};
 
 /// A default claim set, including the standard, or registered, claims and the ability to specify
 /// your own as custom claims.
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq)]
-pub struct Payload<T> {
+pub struct Payload<T = ()> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iss: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -100,9 +100,9 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
 
 #[cfg(test)]
 mod tests {
+    use super::{DefaultPayload, Payload};
     use std::default::Default;
     use time::{self, Duration};
-    use super::{DefaultPayload, Payload};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct CustomClaims {

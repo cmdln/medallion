@@ -1,6 +1,6 @@
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::{self, Value};
 use std::default::Default;
 
@@ -13,7 +13,7 @@ use super::Result;
 /// depending on the application whereas claims seem to be shared as a function of registerest and
 /// public claims.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct Header<T> {
+pub struct Header<T = ()> {
     pub alg: Algorithm,
     #[serde(skip_serializing)]
     pub headers: Option<T>,
