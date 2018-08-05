@@ -1,25 +1,24 @@
 [package]
-name = "medallion"
-version = "2.2.2"
 authors = ["Thomas Gideon <cmdln@thecommandline.net>"]
+categories = ["cryptography", "authentication", "web-programming", "data-structures"]
 description = "JWT library for rust using serde, serde_json and openssl"
-homepage = "http://github.com/commandline/medallion"
-repository = "http://github.com/commandline/medallion"
 documentation = "https://commandline.github.io/medallion/"
-readme = "README.md"
+homepage = "http://github.com/commandline/medallion"
 keywords = ["JWT", "token", "web", "JSON", "RSA"]
-categories = ["cryptography", "authentication", "web-programming",
-"data-structures"]
 license = "MIT"
+name = "medallion"
+readme = "README.md"
+repository = "http://github.com/commandline/medallion"
+version = "2.2.3"
+[badges]
+[badges.travis-ci]
+branch = "master"
+repository = "https://travis-ci.org/commandline/medallion"
 
 [dependencies]
 base64 = "0.9"
 openssl = "0.10"
 serde = "1.0"
-serde_json = "1.0"
 serde_derive = "1.0"
+serde_json = "1.0"
 time = "0.1"
-
-[badges]
-travis-ci = { repository = "https://travis-ci.org/commandline/medallion", branch = "master" }
-

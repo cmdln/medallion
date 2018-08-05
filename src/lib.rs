@@ -14,17 +14,17 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate time;
 
-use serde::Serialize;
-use serde::de::DeserializeOwned;
 pub use error::Error;
-pub use header::Header;
 pub use header::Algorithm;
+pub use header::Header;
 pub use payload::{DefaultPayload, Payload};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 
+mod crypt;
 pub mod error;
 mod header;
 mod payload;
-mod crypt;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -35,7 +35,7 @@ pub type DefaultToken<H> = Token<H, ()>;
 
 /// Main struct representing a JSON Web Token, composed of a header and a set of claims.
 #[derive(Debug, Default)]
-pub struct Token<H, C> {
+pub struct Token<H = (), C = ()> {
     raw: Option<String>,
     pub header: Header<H>,
     pub payload: Payload<C>,
@@ -104,11 +104,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use {DefaultPayload, DefaultToken, Header};
+    use super::Algorithm::{HS256, RS512};
     use openssl;
     use std::default::Default;
     use time::{self, Duration, Tm};
-    use super::Algorithm::{HS256, RS512};
+    use {DefaultPayload, DefaultToken, Header, Payload, Token};
 
     #[test]
     pub fn raw_data() {
@@ -124,16 +124,16 @@ mod tests {
     #[test]
     pub fn roundtrip_hmac() {
         let now = time::now();
-        let header: Header<()> = Default::default();
+        let header: Header<()> = Header::default();
         let payload = DefaultPayload {
             nbf: Some(now.to_timespec().sec as u64),
             exp: Some((now + Duration::minutes(5)).to_timespec().sec as u64),
-            ..Default::default()
+            ..DefaultPayload::default()
         };
-        let token = DefaultToken::new(header, payload);
+        let token = Token::new(header, payload);
         let key = "secret".as_bytes();
         let raw = token.sign(key).unwrap();
-        let same = DefaultToken::parse(&*raw).unwrap();
+        let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert!(same.verify(key).unwrap());
@@ -145,7 +145,7 @@ mod tests {
         let token = create_for_range(now, now + Duration::minutes(-5));
         let key = "secret".as_bytes();
         let raw = token.sign(key).unwrap();
-        let same = DefaultToken::parse(&*raw).unwrap();
+        let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert_eq!(false, same.verify(key).unwrap());
@@ -157,7 +157,7 @@ mod tests {
         let token = create_for_range(now + Duration::minutes(5), now + Duration::minutes(10));
         let key = "secret".as_bytes();
         let raw = token.sign(key).unwrap();
-        let same = DefaultToken::parse(&*raw).unwrap();
+        let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert_eq!(false, same.verify(key).unwrap());
@@ -168,16 +168,16 @@ mod tests {
         let rsa_keypair = openssl::rsa::Rsa::generate(2048).unwrap();
         let header: Header<()> = Header {
             alg: RS512,
-            ..Default::default()
+            ..Header::default()
         };
         let token = DefaultToken {
             header: header,
-            ..Default::default()
+            ..Token::default()
         };
         let raw = token
             .sign(&rsa_keypair.private_key_to_pem().unwrap())
             .unwrap();
-        let same = DefaultToken::parse(&*raw).unwrap();
+        let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert!(
@@ -186,13 +186,13 @@ mod tests {
         );
     }
 
-    fn create_for_range(nbf: Tm, exp: Tm) -> DefaultToken<()> {
-        let header: Header<()> = Default::default();
-        let payload = DefaultPayload {
+    fn create_for_range(nbf: Tm, exp: Tm) -> Token {
+        let header: Header = Header::default();
+        let payload = Payload {
             nbf: Some(nbf.to_timespec().sec as u64),
             exp: Some(exp.to_timespec().sec as u64),
-            ..Default::default()
+            ..Payload::default()
         };
-        DefaultToken::new(header, payload)
+        Token::new(header, payload)
     }
 }
