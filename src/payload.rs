@@ -1,6 +1,5 @@
 use super::Result;
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use error::Error;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json;
@@ -68,7 +67,7 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
                         let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
                         Ok(enc)
                     } else {
-                        Err(Error::Custom("Could not access custom claims.".to_owned()))
+                        Err(format_err!("Could not access custom claims."))
                     }
                 }
                 None => {
@@ -78,9 +77,7 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
                 }
             }
         } else {
-            Err(Error::Custom(
-                "Could not access standard claims.".to_owned(),
-            ))
+            Err(format_err!("Could not access standard claims.",))
         }
     }
 
@@ -234,10 +231,10 @@ mod tests {
     fn create_default() -> DefaultPayload {
         DefaultPayload {
             aud: Some("login_service".into()),
-            iat: Some(1302317100),
+            iat: Some(1_302_317_100),
             iss: Some("example.com".into()),
-            exp: Some(1302319100),
-            nbf: Some(1302317100),
+            exp: Some(1_302_319_100),
+            nbf: Some(1_302_317_100),
             sub: Some("Random User".into()),
             ..Default::default()
         }
@@ -246,8 +243,8 @@ mod tests {
     fn create_custom() -> Payload<CustomClaims> {
         Payload {
             iss: Some("example.com".into()),
-            iat: Some(1302317100),
-            exp: Some(1302319100),
+            iat: Some(1_302_317_100),
+            exp: Some(1_302_319_100),
             claims: Some(CustomClaims {
                 user_id: "123456".into(),
                 is_admin: false,

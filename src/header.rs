@@ -1,10 +1,7 @@
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{self, Value};
-use std::default::Default;
 
-use super::error::Error;
 use super::Result;
 
 /// An extensible Header that provides only algorithm field and allows for additional fields to be
@@ -55,9 +52,7 @@ impl<T: Serialize + DeserializeOwned> Header<T> {
                         let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
                         Ok(enc)
                     } else {
-                        Err(Error::Custom(
-                            "Could not access additional headers.".to_owned(),
-                        ))
+                        Err(format_err!("Could not access additional headers."))
                     }
                 }
                 None => {
@@ -67,7 +62,7 @@ impl<T: Serialize + DeserializeOwned> Header<T> {
                 }
             }
         } else {
-            Err(Error::Custom("Could not access default header.".to_owned()))
+            Err(format_err!("Could not access default header."))
         }
     }
 }
@@ -113,7 +108,7 @@ mod tests {
     #[test]
     fn to_base64() {
         let enc = "eyJhbGciOiJIUzI1NiJ9";
-        let header: Header<()> = Default::default();
+        let header: Header<()> = Header::default();
 
         assert_eq!(enc, header.to_base64().unwrap());
     }
@@ -126,7 +121,7 @@ mod tests {
                 kid: "1KSF3g".into(),
                 typ: "JWT".into(),
             }),
-            ..Default::default()
+            ..Header::default()
         };
 
         assert_eq!(enc, header.to_base64().unwrap());
@@ -134,7 +129,7 @@ mod tests {
 
     #[test]
     fn roundtrip() {
-        let header: Header<()> = Default::default();
+        let header: Header<()> = Header::default();
         let enc = header.to_base64().unwrap();
         assert_eq!(header, Header::from_base64(&*enc).unwrap());
     }

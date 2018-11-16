@@ -1,10 +1,13 @@
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
 use header::Algorithm;
-use openssl::hash::MessageDigest;
-use openssl::memcmp;
-use openssl::pkey::PKey;
-use openssl::rsa::Rsa;
-use openssl::sign::{Signer, Verifier};
+use openssl::{
+    hash::MessageDigest,
+    memcmp,
+    pkey::PKey,
+    rsa::Rsa,
+    sign::{Signer, Verifier},
+};
+
 use super::Result;
 
 pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> Result<String> {
@@ -72,9 +75,9 @@ fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) ->
 
 #[cfg(test)]
 pub mod tests {
+    use super::{sign, verify};
     use header::Algorithm;
     use openssl;
-    use super::{sign, verify};
 
     #[test]
     pub fn sign_data_hmac() {
@@ -83,7 +86,7 @@ pub mod tests {
         let real_sig = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let data = format!("{}.{}", header, claims);
 
-        let sig = sign(&*data, "secret".as_bytes(), &Algorithm::HS256);
+        let sig = sign(&*data, b"secret", &Algorithm::HS256);
 
         assert_eq!(sig.unwrap(), real_sig);
     }
@@ -120,6 +123,6 @@ pub mod tests {
         let target = "TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
         let data = format!("{}.{}", header, claims);
 
-        assert!(verify(target, &*data, "secret".as_bytes(), &Algorithm::HS256).unwrap());
+        assert!(verify(target, &*data, b"secret", &Algorithm::HS256).unwrap());
     }
 }
