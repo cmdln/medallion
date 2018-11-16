@@ -7,6 +7,8 @@
 ///! Tries to support the standard uses for JWTs while providing reasonable ways to extend,
 ///! primarily by adding custom headers and claims to tokens.
 extern crate base64;
+#[macro_use]
+extern crate failure;
 extern crate openssl;
 extern crate serde;
 #[macro_use]
@@ -14,19 +16,16 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate time;
 
-pub use error::Error;
-pub use header::Algorithm;
-pub use header::Header;
+pub use header::{Algorithm, Header};
 pub use payload::{DefaultPayload, Payload};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 
 mod crypt;
-pub mod error;
+mod error;
 mod header;
 mod payload;
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub use error::Result;
 
 /// A convenient type that binds the same type parameter for the custom claims, an empty tuple, as
 /// `DefaultPayload` so that the two aliases may be used together to reduce boilerplate when no
@@ -118,7 +117,7 @@ mod tests {
         let token = DefaultToken::<()>::parse(raw).unwrap();
 
         assert_eq!(token.header.alg, HS256);
-        assert!(token.verify("secret".as_bytes()).unwrap());
+        assert!(token.verify(b"secret").unwrap());
     }
 
     #[test]
@@ -131,7 +130,7 @@ mod tests {
             ..DefaultPayload::default()
         };
         let token = Token::new(header, payload);
-        let key = "secret".as_bytes();
+        let key = b"secret";
         let raw = token.sign(key).unwrap();
         let same = Token::parse(&*raw).unwrap();
 
@@ -143,7 +142,7 @@ mod tests {
     pub fn roundtrip_expired() {
         let now = time::now();
         let token = create_for_range(now, now + Duration::minutes(-5));
-        let key = "secret".as_bytes();
+        let key = b"secret";
         let raw = token.sign(key).unwrap();
         let same = Token::parse(&*raw).unwrap();
 
@@ -155,7 +154,7 @@ mod tests {
     pub fn roundtrip_not_yet_valid() {
         let now = time::now();
         let token = create_for_range(now + Duration::minutes(5), now + Duration::minutes(10));
-        let key = "secret".as_bytes();
+        let key = b"secret";
         let raw = token.sign(key).unwrap();
         let same = Token::parse(&*raw).unwrap();
 
@@ -171,7 +170,7 @@ mod tests {
             ..Header::default()
         };
         let token = DefaultToken {
-            header: header,
+            header,
             ..Token::default()
         };
         let raw = token
