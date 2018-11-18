@@ -19,8 +19,6 @@ The library provides a `Token` type that wraps headers and claims.
 ```rust
 extern crate medallion;
 
-use std::default::Default;
-
 use medallion::{
     Header,
     DefaultPayload,
@@ -29,11 +27,11 @@ use medallion::{
 
 fn main() {
     // will default to Algorithm::HS256
-    let header: Header<()> = Default::default();
+    let header: Header = Header::default();
     let payload = DefaultPayload {
         iss: Some("example.com".into()),
         sub: Some("Random User".into()),
-        ..Default::default()
+        ..DefaultPayload::default()
     };
     let token = Token::new(header, payload);
 
@@ -41,12 +39,16 @@ fn main() {
 }
 ```
 
-The `Header` struct contains all of the headers of the JWT. It requires that a supported algorithm (`HS256`, `HS384`, `HS512`, `RS256`, `RS384`, and `RS512`) be specified. It requires a type for additional header fields. That type must implement serde's `Serialize` and `Deserialize` as well as `PartialEq`. These traits can usually be derived, e.g.  `#[derive(PartialEq, Serialize, Deserialize)`.
+The `Header` struct contains all of the headers of the JWT. It requires that a
+supported algorithm (`HS256`, `HS384`, `HS512`, `RS256`, `RS384`, and `RS512`)
+be specified. It requires a type for additional header fields. That type must
+implement serde's `Serialize` and `Deserialize` as well as `PartialEq`. These
+traits can usually be derived, e.g.  `#[derive(PartialEq, Serialize,
+Deserialize)`.
 
 ```rust
 extern crate medallion;
 
-use std::default::Default;
 use serde::{Serialize, Deserialize};
 
 use medallion::{Header, DefaultPayload, Token};
@@ -63,12 +65,12 @@ fn main() {
             kid: "0001",)
             typ: "JWT",)
         }
-        ..Default::default()
+        ..Header::default()
     }
     let payload = DefaultPayload {
         iss: Some("example.com".into()),
         sub: Some("Random User".into()),
-        ..Default::default()
+        ..DefaultPayload::default()
     };
     let token = Token::new(header, payload);
 
@@ -76,12 +78,17 @@ fn main() {
 }
 ```
 
-The `Payload` struct contains all of the claims of the JWT. It provides the set of registered, public claims. Additional claims can be added by constructing the `Payload` with a generically typed value. That value's type must implement serde's `Serialize` and `Deserialize` as well as `PartialEq`. These traits can usually be derived, e.g.  `#[derive(PartialEq, Serialize, Deserialize)`. A convenience type, `DefaultPayload`, is provided that binds the generic parameter of `Payload` to an empty tuple type.
+The `Payload` struct contains all of the claims of the JWT. It provides the set
+of registered, public claims. Additional claims can be added by constructing
+the `Payload` with a generically typed value. That value's type must implement
+serde's `Serialize` and `Deserialize` as well as `PartialEq`. These traits can
+usually be derived, e.g.  `#[derive(PartialEq, Serialize, Deserialize)`. A
+convenience type, `DefaultPayload`, is provided that binds the generic
+parameter of `Payload` to an empty tuple type.
 
 ```rust
 extern crate medallion;
 
-use std::default::Default;
 use serde::{Serialize, Deserialize};
 
 use medallion::{Header, DefaultPayload, Token};
@@ -104,7 +111,7 @@ fn main() {
             kid: "0001",)
             typ: "JWT",)
         }
-        ..Default::default()
+        ..Header::default()
     }
     let payload = DefaultPayload {
         iss: Some("example.com".into()),
@@ -113,7 +120,7 @@ fn main() {
             user_id: 1234,
             email: "random@example.com",
         }
-        ..Default::default()
+        ..DefaultPayload::default()
     };
     let token = Token::new(header, payload);
 
