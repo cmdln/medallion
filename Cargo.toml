@@ -8,7 +8,7 @@ keywords = ["JWT", "token", "web", "JSON", "RSA"]
 license = "MIT"
 name = "medallion"
 readme = "README.md"
-repository = "http://github.com/cmdn/medallion"
+repository = "http://github.com/cmdln/medallion"
 version = "2.3.0"
 [badges]
 [badges.travis-ci]
