@@ -3,8 +3,7 @@
 extern crate serde_derive;
 extern crate medallion;
 
-use std::default::Default;
-use medallion::{Payload, Header, Token};
+use medallion::{Header, Payload, Token};
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 struct Custom {
@@ -24,16 +23,16 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
         return None;
     }
 
-    let header: Header<()> = Default::default();
+    let header: Header = Header::default();
     let payload = Payload {
         // custom claims will be application specific, they may come from open standards such as
         // openidconnect where they may be referred to as registered claims
         claims: Some(Custom {
             user_id: user_id.into(),
             rhino: true,
-            ..Default::default()
+            ..Custom::default()
         }),
-        ..Default::default()
+        ..Payload::default()
     };
     let token = Token::new(header, payload);
 

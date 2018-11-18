@@ -3,8 +3,7 @@
 extern crate serde_derive;
 extern crate medallion;
 
-use std::default::Default;
-use medallion::{DefaultPayload, Header, DefaultToken};
+use medallion::{DefaultPayload, DefaultToken, Header};
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 struct Custom {
@@ -27,10 +26,16 @@ fn new_token(sub: &str, password: &str) -> Option<String> {
         // customer headers generally are about the token itself, like here describing the type of
         // token, as opposed to claims which are about the authenticated user or some output of
         // the authentication process
-        headers: Some(Custom { typ: "JWT".into(), ..Default::default() }),
+        headers: Some(Custom {
+            typ: "JWT".into(),
+            ..Custom::default()
+        }),
         ..Default::default()
     };
-    let payload = DefaultPayload { sub: Some(sub.into()), ..Default::default() };
+    let payload = DefaultPayload {
+        sub: Some(sub.into()),
+        ..DefaultPayload::default()
+    };
     let token = DefaultToken::new(header, payload);
 
     token.sign(b"secret_key").ok()

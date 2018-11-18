@@ -1,7 +1,6 @@
 extern crate medallion;
 
-use std::default::Default;
-use medallion::{Header, DefaultPayload, DefaultToken};
+use medallion::{DefaultPayload, DefaultToken, Header};
 
 fn new_token(user_id: &str, password: &str) -> Option<String> {
     // dummy auth, in a real application using something like openidconnect, this would be some
@@ -13,11 +12,11 @@ fn new_token(user_id: &str, password: &str) -> Option<String> {
     }
 
     // can satisfy Header's generic parameter with an empty type
-    let header: Header<()> = Default::default();
+    let header: Header = Header::default();
     let payload = DefaultPayload {
         iss: Some("example.com".into()),
         sub: Some(user_id.into()),
-        ..Default::default()
+        ..DefaultPayload::default()
     };
     let token = DefaultToken::new(header, payload);
 

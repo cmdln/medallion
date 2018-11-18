@@ -1,9 +1,8 @@
 extern crate medallion;
 extern crate openssl;
 
-use std::default::Default;
+use medallion::{Algorithm, DefaultPayload, DefaultToken, Header};
 use openssl::rsa;
-use medallion::{Algorithm, Header, DefaultPayload, DefaultToken};
 
 fn new_token(private_key: &[u8], user_id: &str, password: &str) -> Option<String> {
     // dummy auth, in a real application using something like openidconnect, this would be some
@@ -15,11 +14,14 @@ fn new_token(private_key: &[u8], user_id: &str, password: &str) -> Option<String
     }
 
     // can satisfy Header's type parameter with an empty tuple
-    let header: Header<()> = Header { alg: Algorithm::RS256, ..Default::default() };
+    let header: Header = Header {
+        alg: Algorithm::RS256,
+        ..Header::default()
+    };
     let payload: DefaultPayload = DefaultPayload {
         iss: Some("example.com".into()),
         sub: Some(user_id.into()),
-        ..Default::default()
+        ..DefaultPayload::default()
     };
     let token = DefaultToken::new(header, payload);
 
@@ -40,7 +42,11 @@ fn main() {
     // alternatively can read .pem files from fs or fetch from a server or...
     let keypair = rsa::Rsa::generate(2048).unwrap();
 
-    let token = new_token(&keypair.private_key_to_pem().unwrap(), "Random User", "password").unwrap();
+    let token = new_token(
+        &keypair.private_key_to_pem().unwrap(),
+        "Random User",
+        "password",
+    ).unwrap();
 
     let logged_in_user = login(&keypair.public_key_to_pem().unwrap(), &*token).unwrap();
 
