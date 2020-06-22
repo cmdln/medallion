@@ -1,8 +1,8 @@
-use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{self, Value};
-
 use super::Result;
+use anyhow::format_err;
+use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde_json::{self, Value};
 
 /// An extensible Header that provides only algorithm field and allows for additional fields to be
 /// passed in via a struct that can be serialized and deserialized. Unlike the Claims struct, there
@@ -79,6 +79,7 @@ impl<T> Default for Header<T> {
 #[cfg(test)]
 mod tests {
     use super::{Algorithm, Header};
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct CustomHeaders {

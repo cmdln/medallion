@@ -1,10 +1,9 @@
 use super::Result;
+use anyhow::format_err;
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use serde_json;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::value::Value;
-use time::{self, Timespec};
 
 /// A default claim set, including the standard, or registered, claims and the ability to specify
 /// your own as custom claims.
@@ -73,7 +72,7 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
                 None => {
                     let s = serde_json::to_string(&claims_map)?;
                     let enc = encode_config((&*s).as_bytes(), URL_SAFE_NO_PAD);
-                    return Ok(enc);
+                    Ok(enc)
                 }
             }
         } else {
@@ -82,13 +81,25 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
     }
 
     pub fn verify(&self) -> bool {
-        let now = time::now().to_timespec();
+        let now = Utc::now();
         let nbf_verified = match self.nbf {
-            Some(nbf_sec) => Timespec::new(nbf_sec as i64, 0) < now,
+            Some(nbf_sec) => {
+                let nbf = DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp(nbf_sec as i64, 0),
+                    Utc,
+                );
+                nbf < now
+            }
             None => true,
         };
         let exp_verified = match self.exp {
-            Some(exp_sec) => now < Timespec::new(exp_sec as i64, 0),
+            Some(exp_sec) => {
+                let exp = DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp(exp_sec as i64, 0),
+                    Utc,
+                );
+                now < exp
+            }
             None => true,
         };
         nbf_verified && exp_verified
@@ -98,8 +109,9 @@ impl<T: Serialize + DeserializeOwned> Payload<T> {
 #[cfg(test)]
 mod tests {
     use super::{DefaultPayload, Payload};
+    use chrono::{prelude::*, Duration};
+    use serde::{Deserialize, Serialize};
     use std::default::Default;
-    use time::{self, Duration};
 
     #[derive(Default, Debug, Serialize, Deserialize, PartialEq)]
     struct CustomClaims {
@@ -199,7 +211,7 @@ mod tests {
     }
 
     fn create_with_nbf(offset: i64) -> DefaultPayload {
-        let nbf = (time::now() - Duration::minutes(offset)).to_timespec().sec;
+        let nbf = (Utc::now() - Duration::minutes(offset)).timestamp();
         DefaultPayload {
             nbf: Some(nbf as u64),
             ..Default::default()
@@ -207,7 +219,7 @@ mod tests {
     }
 
     fn create_with_exp(offset: i64) -> DefaultPayload {
-        let exp = (time::now() + Duration::minutes(offset)).to_timespec().sec;
+        let exp = (Utc::now() + Duration::minutes(offset)).timestamp();
         DefaultPayload {
             exp: Some(exp as u64),
             ..Default::default()
@@ -215,12 +227,8 @@ mod tests {
     }
 
     fn create_with_nbf_exp(nbf_offset: i64, exp_offset: i64) -> DefaultPayload {
-        let nbf = (time::now() - Duration::minutes(nbf_offset))
-            .to_timespec()
-            .sec;
-        let exp = (time::now() + Duration::minutes(exp_offset))
-            .to_timespec()
-            .sec;
+        let nbf = (Utc::now() - Duration::minutes(nbf_offset)).timestamp();
+        let exp = (Utc::now() + Duration::minutes(exp_offset)).timestamp();
         DefaultPayload {
             nbf: Some(nbf as u64),
             exp: Some(exp as u64),

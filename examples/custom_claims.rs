@@ -1,9 +1,5 @@
-// need this for custom derivation
-#[macro_use]
-extern crate serde_derive;
-extern crate medallion;
-
 use medallion::{Header, Payload, Token};
+use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 struct Custom {

@@ -1,5 +1,6 @@
+use super::Result;
+use crate::header::Algorithm;
 use base64::{decode_config, encode_config, URL_SAFE_NO_PAD};
-use header::Algorithm;
 use openssl::{
     hash::MessageDigest,
     memcmp,
@@ -7,8 +8,6 @@ use openssl::{
     rsa::Rsa,
     sign::{Signer, Verifier},
 };
-
-use super::Result;
 
 pub fn sign(data: &str, key: &[u8], algorithm: &Algorithm) -> Result<String> {
     match *algorithm {
@@ -76,8 +75,7 @@ fn verify_rsa(signature: &str, data: &str, key: &[u8], digest: MessageDigest) ->
 #[cfg(test)]
 pub mod tests {
     use super::{sign, verify};
-    use header::Algorithm;
-    use openssl;
+    use crate::header::Algorithm;
 
     #[test]
     pub fn sign_data_hmac() {
@@ -104,16 +102,16 @@ pub mod tests {
             &*data,
             &keypair.private_key_to_pem().unwrap(),
             &Algorithm::RS256,
-        ).unwrap();
+        )
+        .unwrap();
 
-        assert!(
-            verify(
-                &sig,
-                &*data,
-                &keypair.public_key_to_pem().unwrap(),
-                &Algorithm::RS256
-            ).unwrap()
-        );
+        assert!(verify(
+            &sig,
+            &*data,
+            &keypair.public_key_to_pem().unwrap(),
+            &Algorithm::RS256
+        )
+        .unwrap());
     }
 
     #[test]

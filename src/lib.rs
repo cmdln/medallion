@@ -6,26 +6,15 @@
 ///!
 ///! Tries to support the standard uses for JWTs while providing reasonable ways to extend,
 ///! primarily by adding custom headers and claims to tokens.
-extern crate base64;
-#[macro_use]
-extern crate failure;
-extern crate openssl;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate time;
-
 pub use header::{Algorithm, Header};
 pub use payload::{DefaultPayload, Payload};
 use serde::{de::DeserializeOwned, Serialize};
 
 mod crypt;
-mod error;
 mod header;
 mod payload;
 
-pub use error::Result;
+pub use anyhow::Result;
 
 /// A convenient type that binds the same type parameter for the custom claims, an empty tuple, as
 /// `DefaultPayload` so that the two aliases may be used together to reduce boilerplate when no
@@ -104,10 +93,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::Algorithm::{HS256, RS512};
-    use openssl;
-    use std::default::Default;
-    use time::{self, Duration, Tm};
-    use {DefaultPayload, DefaultToken, Header, Payload, Token};
+    use crate::{DefaultPayload, DefaultToken, Header, Payload, Token};
+    use anyhow::Result;
+    use chrono::{prelude::*, Duration};
+    use std::convert::TryInto;
 
     #[test]
     pub fn raw_data() {
@@ -122,11 +111,11 @@ mod tests {
 
     #[test]
     pub fn roundtrip_hmac() {
-        let now = time::now();
+        let now = Utc::now();
         let header: Header<()> = Header::default();
         let payload = DefaultPayload {
-            nbf: Some(now.to_timespec().sec as u64),
-            exp: Some((now + Duration::minutes(5)).to_timespec().sec as u64),
+            nbf: Some(now.timestamp().try_into().unwrap()),
+            exp: Some((now + Duration::minutes(5)).timestamp().try_into().unwrap()),
             ..DefaultPayload::default()
         };
         let token = Token::new(header, payload);
@@ -139,27 +128,29 @@ mod tests {
     }
 
     #[test]
-    pub fn roundtrip_expired() {
-        let now = time::now();
-        let token = create_for_range(now, now + Duration::minutes(-5));
+    pub fn roundtrip_expired() -> Result<()> {
+        let now = Utc::now();
+        let token = create_for_range(now, now + Duration::minutes(-5))?;
         let key = b"secret";
-        let raw = token.sign(key).unwrap();
+        let raw = token.sign(key)?;
         let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert_eq!(false, same.verify(key).unwrap());
+        Ok(())
     }
 
     #[test]
-    pub fn roundtrip_not_yet_valid() {
-        let now = time::now();
-        let token = create_for_range(now + Duration::minutes(5), now + Duration::minutes(10));
+    pub fn roundtrip_not_yet_valid() -> Result<()> {
+        let now = Utc::now();
+        let token = create_for_range(now + Duration::minutes(5), now + Duration::minutes(10))?;
         let key = b"secret";
-        let raw = token.sign(key).unwrap();
+        let raw = token.sign(key)?;
         let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
         assert_eq!(false, same.verify(key).unwrap());
+        Ok(())
     }
 
     #[test]
@@ -179,19 +170,18 @@ mod tests {
         let same = Token::parse(&*raw).unwrap();
 
         assert_eq!(token, same);
-        assert!(
-            same.verify(&rsa_keypair.public_key_to_pem().unwrap())
-                .unwrap()
-        );
+        assert!(same
+            .verify(&rsa_keypair.public_key_to_pem().unwrap())
+            .unwrap());
     }
 
-    fn create_for_range(nbf: Tm, exp: Tm) -> Token {
+    fn create_for_range(nbf: DateTime<Utc>, exp: DateTime<Utc>) -> Result<Token> {
         let header: Header = Header::default();
         let payload = Payload {
-            nbf: Some(nbf.to_timespec().sec as u64),
-            exp: Some(exp.to_timespec().sec as u64),
+            nbf: Some(nbf.timestamp().try_into()?),
+            exp: Some(exp.timestamp().try_into()?),
             ..Payload::default()
         };
-        Token::new(header, payload)
+        Ok(Token::new(header, payload))
     }
 }
