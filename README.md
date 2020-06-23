@@ -3,7 +3,7 @@ Medallion
 [![Build Status](https://travis-ci.org/cmdln/medallion.svg?branch=master)](https://travis-ci.org/cmdln/medallion)
 [![Crates.io Status](http://meritbadge.herokuapp.com/medallion)](https://crates.io/crates/medallion)
 [![Documentation](https://docs.rs/medallion/badge.svg)](https://docs.rs/medallion)
-[![dependency status](https://deps.rs/crate/medallion/2.3.0/status.svg)](https://deps.rs/crate/medallion/2.3.0)
+[![dependency status](https://deps.rs/crate/medallion/2.4.0/status.svg)](https://deps.rs/crate/medallion/2.4.0)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/cmdln/medallion/master/LICENSE)
 
 A JWT library for rust using serde, serde_json and openssl.
